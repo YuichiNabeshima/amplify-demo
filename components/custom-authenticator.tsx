@@ -85,6 +85,7 @@ export function CustomAuthenticator({ userType, onAuthSuccess }: AuthenticatorPr
 
     try {
       const endpoint = activeTab === "signin" ? "/api/auth/signin" : "/api/auth/signup"
+      console.log('Sending request to:', endpoint)
       const response = await fetch(endpoint, {
         method: "POST",
         headers: {
@@ -96,7 +97,9 @@ export function CustomAuthenticator({ userType, onAuthSuccess }: AuthenticatorPr
         }),
       })
 
+      console.log('Response headers:', Object.fromEntries(response.headers.entries()))
       const data = await response.json()
+      console.log('Response data:', data)
 
       if (!response.ok) {
         throw new Error(data.error || "Authentication failed")
@@ -105,8 +108,11 @@ export function CustomAuthenticator({ userType, onAuthSuccess }: AuthenticatorPr
       setUser(data.user)
       setIsAuthenticated(true)
       onAuthSuccess?.(data.user)
-      router.push("/dashboard")
+      console.log('Redirecting to dashboard...')
+      const dashboardPath = data.userType === "customer" ? "/dashboard" : "/dashboard/partner";
+      window.location.href = dashboardPath;
     } catch (err: any) {
+      console.error('Sign in error:', err)
       setError(err.message || "Authentication failed. Please try again.")
     } finally {
       setIsLoading(false)
@@ -153,7 +159,8 @@ export function CustomAuthenticator({ userType, onAuthSuccess }: AuthenticatorPr
             <Button
               className="w-full bg-primary hover:bg-primary/90"
               onClick={() => {
-                router.push("/dashboard")
+                const dashboardPath = userType === "customer" ? "/dashboard" : "/dashboard/partner";
+                window.location.href = dashboardPath;
               }}
             >
               Go to Dashboard

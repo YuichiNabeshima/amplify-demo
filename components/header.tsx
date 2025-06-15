@@ -4,6 +4,8 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { MobileMenu } from "@/components/mobile-menu"
 import { PaintBucket } from "lucide-react"
+import { useRouter } from "next/navigation"
+import { useAuth } from "@/hooks/use-auth"
 
 interface HeaderProps {
   userType?: "customer" | "partner" | null
@@ -11,9 +13,41 @@ interface HeaderProps {
 }
 
 export function Header({ userType, isAuthenticated }: HeaderProps) {
+  const router = useRouter()
+  const { isAuthenticated: authIsAuthenticated, userType: authUserType, loading } = useAuth()
   const isPartner = userType === "partner"
   const primaryColor = isPartner ? "bg-orange-500 hover:bg-orange-600" : "bg-primary hover:bg-primary/90"
   const iconColor = isPartner ? "text-orange-500" : "text-primary"
+
+  const handleSignOut = async () => {
+    try {
+      const response = await fetch('/api/auth/signout', {
+        method: 'POST',
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to sign out')
+      }
+
+      router.push('/')
+      window.location.reload()
+    } catch (error) {
+      console.error('Sign out error:', error)
+    }
+  }
+
+  if (loading) {
+    return (
+      <header className="bg-white shadow-sm border-b sticky top-0 z-40">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <div className="h-8 w-32 bg-gray-200 animate-pulse rounded" />
+            <div className="h-8 w-32 bg-gray-200 animate-pulse rounded" />
+          </div>
+        </div>
+      </header>
+    )
+  }
 
   return (
     <header className="bg-white shadow-sm border-b sticky top-0 z-40">
@@ -69,19 +103,19 @@ export function Header({ userType, isAuthenticated }: HeaderProps) {
                   </Link>
                 )}
                 {userType === "partner" && (
-                  <Link href="/partner/dashboard">
+                  <Link href="/dashboard/partner">
                     <Button variant="outline" className="border-orange-500 text-orange-500 hover:bg-orange-50">
                       Partner Dashboard
                     </Button>
                   </Link>
                 )}
-                <Button variant="ghost">Sign Out</Button>
+                <Button variant="ghost" onClick={handleSignOut}>Sign Out</Button>
               </>
             )}
           </div>
 
           {/* Mobile Menu - Only shown on mobile/tablet, hidden on desktop */}
-          <MobileMenu userType={userType} isAuthenticated={isAuthenticated} />
+          <MobileMenu userType={userType} isAuthenticated={isAuthenticated} onSignOut={handleSignOut} />
         </div>
       </div>
     </header>

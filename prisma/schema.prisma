@@ -49,6 +49,8 @@ model Booking {
   servicePlan   String    // Service plan type: "basic", "standard", "premium", etc.
   status        String    // Booking status: "pending", "confirmed", "completed", "cancelled"
   notes         String?   // Additional booking information
+  price         Float     // Service price
+  rating        Int?      // Customer rating (1-5)
   customerId    String
   partnerId     String
   customer      Customer  @relation(fields: [customerId], references: [id])

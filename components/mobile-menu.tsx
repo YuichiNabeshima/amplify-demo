@@ -4,13 +4,16 @@ import { useState, useEffect } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { PaintBucket, Menu, X } from "lucide-react"
+import { useRouter } from "next/navigation"
 
 interface MobileMenuProps {
   userType?: "customer" | "partner" | null
   isAuthenticated?: boolean
+  onSignOut: () => Promise<void>
 }
 
-export function MobileMenu({ userType, isAuthenticated }: MobileMenuProps) {
+export function MobileMenu({ userType, isAuthenticated, onSignOut }: MobileMenuProps) {
+  const router = useRouter()
   const [isOpen, setIsOpen] = useState(false)
   const [isAnimating, setIsAnimating] = useState(false)
 
@@ -38,6 +41,11 @@ export function MobileMenu({ userType, isAuthenticated }: MobileMenuProps) {
     } else {
       openMenu()
     }
+  }
+
+  const handleSignOut = async () => {
+    await onSignOut()
+    closeMenu()
   }
 
   // Prevent body scroll when menu is open
@@ -183,7 +191,7 @@ export function MobileMenu({ userType, isAuthenticated }: MobileMenuProps) {
                       </Link>
                     )}
                     {userType === "partner" && (
-                      <Link href="/partner/dashboard" onClick={closeMenu}>
+                      <Link href="/dashboard/partner" onClick={closeMenu}>
                         <Button
                           variant="outline"
                           className="w-full border-orange-500 text-orange-500 hover:bg-orange-50 opacity-0 animate-fade-in-delay-5 hover:scale-105 transition-all duration-200"
@@ -195,7 +203,7 @@ export function MobileMenu({ userType, isAuthenticated }: MobileMenuProps) {
                     <Button
                       variant="ghost"
                       className="w-full opacity-0 animate-fade-in-delay-6 hover:scale-105 transition-all duration-200"
-                      onClick={closeMenu}
+                      onClick={handleSignOut}
                     >
                       Sign Out
                     </Button>
