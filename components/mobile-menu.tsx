@@ -75,145 +75,82 @@ export function MobileMenu({ userType, isAuthenticated, onSignOut }: MobileMenuP
   }, [isOpen])
 
   return (
-    <>
-      {/* Mobile Menu Button */}
-      <button
+    <div className="md:hidden">
+      <Button
+        variant="ghost"
+        size="icon"
         onClick={toggleMenu}
-        className="md:hidden p-2 rounded-md hover:bg-gray-100 transition-colors duration-200"
-        aria-label="Toggle menu"
+        className="relative z-50"
       >
-        <div className="relative w-5 h-5">
-          {/* Animated Menu/Close Icon */}
-          <div
-            className={`absolute inset-0 transition-all duration-300 ${isOpen ? "rotate-180 opacity-0" : "rotate-0 opacity-100"}`}
-          >
-            <Menu className="h-5 w-5" />
-          </div>
-          <div
-            className={`absolute inset-0 transition-all duration-300 ${isOpen ? "rotate-0 opacity-100" : "rotate-180 opacity-0"}`}
-          >
-            <X className="h-5 w-5" />
-          </div>
-        </div>
-      </button>
+        {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+      </Button>
 
-      {/* Mobile Menu Overlay */}
       {isOpen && (
-        <div className="fixed inset-0 z-50 md:hidden">
-          {/* Backdrop with fade animation */}
-          <div
-            className={`fixed inset-0 bg-black/50 transition-opacity duration-300 ${
-              isAnimating ? "opacity-100" : "opacity-0"
-            }`}
-            onClick={closeMenu}
-          />
+        <div className="fixed inset-0 bg-white z-40 pt-20 px-4">
+          <div className="space-y-4">
+            <Link
+              href="/partners"
+              className="block text-gray-600 hover:text-primary"
+              onClick={closeMenu}
+            >
+              Find Painters
+            </Link>
+            <Link
+              href="/about"
+              className="block text-gray-600 hover:text-primary"
+              onClick={closeMenu}
+            >
+              About
+            </Link>
+            <Link
+              href="/contact"
+              className="block text-gray-600 hover:text-primary"
+              onClick={closeMenu}
+            >
+              Contact
+            </Link>
 
-          {/* Menu Panel with slide animation */}
-          <div
-            className={`fixed right-0 top-0 h-full w-80 max-w-[90vw] bg-white shadow-xl transform transition-transform duration-300 ease-in-out ${
-              isAnimating ? "translate-x-0" : "translate-x-full"
-            }`}
-          >
-            <div className="flex flex-col h-full">
-              {/* Header */}
-              <div className="flex items-center justify-between p-4 border-b">
-                <div className="flex items-center space-x-2 opacity-0 animate-fade-in-delay-1">
-                  <PaintBucket className={`h-6 w-6 ${iconColor}`} />
-                  <span className="text-lg font-bold text-gray-900">
-                    Painting
-                    {isPartner && <span className="text-orange-500 block text-sm font-normal">Partner Portal</span>}
-                  </span>
-                </div>
-                <button
-                  onClick={closeMenu}
-                  className="p-2 rounded-md hover:bg-gray-100 transition-colors duration-200 opacity-0 animate-fade-in-delay-1"
-                  aria-label="Close menu"
-                >
-                  <X className="h-5 w-5" />
-                </button>
-              </div>
-
-              {/* Navigation Links with staggered animation */}
-              <nav className="flex flex-col p-4 border-b">
-                <Link
-                  href="/partners"
-                  className={`py-3 text-gray-600 ${hoverColor} transition-all duration-200 border-b border-gray-100 last:border-b-0 opacity-0 animate-fade-in-delay-2 hover:translate-x-1`}
-                  onClick={closeMenu}
-                >
-                  Find Painters
+            {!isAuthenticated ? (
+              <>
+                <Link href="/auth/customer" onClick={closeMenu}>
+                  <Button variant="outline" className="w-full border-primary text-primary hover:bg-primary/10">
+                    Customer Login
+                  </Button>
                 </Link>
-                <Link
-                  href="/about"
-                  className={`py-3 text-gray-600 ${hoverColor} transition-all duration-200 border-b border-gray-100 last:border-b-0 opacity-0 animate-fade-in-delay-3 hover:translate-x-1`}
-                  onClick={closeMenu}
-                >
-                  About
+                <Link href="/auth/partner" onClick={closeMenu}>
+                  <Button className="w-full bg-orange-500 hover:bg-orange-600">
+                    Partner Login
+                  </Button>
                 </Link>
-                <Link
-                  href="/contact"
-                  className={`py-3 text-gray-600 ${hoverColor} transition-all duration-200 border-b border-gray-100 last:border-b-0 opacity-0 animate-fade-in-delay-4 hover:translate-x-1`}
-                  onClick={closeMenu}
-                >
-                  Contact
-                </Link>
-              </nav>
-
-              {/* Auth Buttons with animation */}
-              <div className="flex flex-col p-4 space-y-3 mt-auto">
-                {!isAuthenticated ? (
-                  <>
-                    <Link href="/auth/customer" onClick={closeMenu}>
-                      <Button
-                        variant="outline"
-                        className="w-full opacity-0 animate-fade-in-delay-5 hover:scale-105 transition-all duration-200"
-                      >
-                        Customer Login
-                      </Button>
-                    </Link>
-                    <Link href="/auth/partner" onClick={closeMenu}>
-                      <Button
-                        className={`${primaryColor} w-full opacity-0 animate-fade-in-delay-6 hover:scale-105 transition-all duration-200`}
-                      >
-                        Partner Login
-                      </Button>
-                    </Link>
-                  </>
-                ) : (
-                  <>
-                    {userType === "customer" && (
-                      <Link href="/dashboard" onClick={closeMenu}>
-                        <Button
-                          variant="outline"
-                          className="w-full opacity-0 animate-fade-in-delay-5 hover:scale-105 transition-all duration-200"
-                        >
-                          My Dashboard
-                        </Button>
-                      </Link>
-                    )}
-                    {userType === "partner" && (
-                      <Link href="/dashboard/partner" onClick={closeMenu}>
-                        <Button
-                          variant="outline"
-                          className="w-full border-orange-500 text-orange-500 hover:bg-orange-50 opacity-0 animate-fade-in-delay-5 hover:scale-105 transition-all duration-200"
-                        >
-                          Partner Dashboard
-                        </Button>
-                      </Link>
-                    )}
-                    <Button
-                      variant="ghost"
-                      className="w-full opacity-0 animate-fade-in-delay-6 hover:scale-105 transition-all duration-200"
-                      onClick={handleSignOut}
-                    >
-                      Sign Out
+              </>
+            ) : (
+              <>
+                {userType === "customer" && (
+                  <Link href="/dashboard" onClick={closeMenu}>
+                    <Button variant="outline" className="w-full border-primary text-primary hover:bg-primary/10">
+                      My Dashboard
                     </Button>
-                  </>
+                  </Link>
                 )}
-              </div>
-            </div>
+                {userType === "partner" && (
+                  <Link href="/dashboard/partner" onClick={closeMenu}>
+                    <Button variant="outline" className="w-full border-orange-500 text-orange-500 hover:bg-orange-50">
+                      Partner Dashboard
+                    </Button>
+                  </Link>
+                )}
+                <Button
+                  variant="ghost"
+                  className="w-full"
+                  onClick={handleSignOut}
+                >
+                  Sign Out
+                </Button>
+              </>
+            )}
           </div>
         </div>
       )}
-    </>
+    </div>
   )
 }

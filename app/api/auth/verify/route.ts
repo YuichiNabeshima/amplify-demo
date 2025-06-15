@@ -1,35 +1,42 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import { verify } from 'jsonwebtoken';
+import { verify } from '@/lib/jwt';
 
 export async function GET() {
   try {
+    console.log("Verifying authentication...");
     const token = cookies().get('token')?.value;
+    console.log("Token present:", !!token);
 
     if (!token) {
+      console.log("No token found");
       return NextResponse.json(
-        { error: 'Not authenticated' },
+        { isAuthenticated: false },
         { status: 401 }
       );
     }
 
-    const decoded = verify(token, process.env.JWT_SECRET!) as {
-      id: string;
-      email: string;
-      type: 'customer' | 'partner';
-    };
+    const payload = await verify(token);
+    console.log("Verification payload:", payload);
+    
+    if (!payload) {
+      console.log("Invalid payload");
+      return NextResponse.json(
+        { isAuthenticated: false },
+        { status: 401 }
+      );
+    }
 
+    console.log("Authentication successful");
     return NextResponse.json({
-      user: {
-        id: decoded.id,
-        email: decoded.email,
-        type: decoded.type
-      }
+      isAuthenticated: true,
+      userType: payload.userType,
+      email: payload.email
     });
   } catch (error) {
-    console.error('Token verification error:', error);
+    console.error('Auth verification failed:', error);
     return NextResponse.json(
-      { error: 'Invalid token' },
+      { isAuthenticated: false },
       { status: 401 }
     );
   }

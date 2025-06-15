@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
 
-interface User {
-  id: string;
-  email: string;
-  type: 'customer' | 'partner';
+interface AuthState {
+  isAuthenticated: boolean;
+  userType: 'customer' | 'partner' | null;
+  loading: boolean;
 }
 
-export function useAuth() {
+export function useAuth(): AuthState {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userType, setUserType] = useState<'customer' | 'partner' | null>(null);
   const [loading, setLoading] = useState(true);
@@ -15,10 +15,18 @@ export function useAuth() {
     const checkAuth = async () => {
       try {
         const response = await fetch('/api/auth/verify');
-        if (response.ok) {
-          const data = await response.json();
+        if (!response.ok) {
+          setIsAuthenticated(false);
+          setUserType(null);
+          return;
+        }
+
+        const data = await response.json();
+        console.log('Auth data:', data);
+
+        if (data.isAuthenticated && data.userType) {
           setIsAuthenticated(true);
-          setUserType(data.user.type);
+          setUserType(data.userType);
         } else {
           setIsAuthenticated(false);
           setUserType(null);

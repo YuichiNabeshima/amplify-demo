@@ -1,30 +1,64 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { verify } from '@/lib/jwt';
 
-export function middleware(request: NextRequest) {
-  console.log('Middleware called for path:', request.nextUrl.pathname);
+export async function middleware(request: NextRequest) {
   const token = request.cookies.get('token')?.value;
-  console.log('Token present:', !!token);
 
-  if (request.nextUrl.pathname.startsWith('/dashboard')) {
-    console.log('Checking dashboard access');
+  // Protected paths that require authentication
+  const protectedPaths = ['/dashboard', '/partner/dashboard'];
+  const isProtectedPath = protectedPaths.some((path) => request.nextUrl.pathname.startsWith(path));
+
+  // Authentication page paths
+  const authPaths = ['/auth', '/auth/partner'];
+  const isAuthPath = authPaths.some((path) => request.nextUrl.pathname.startsWith(path));
+
+  if (isProtectedPath) {
     if (!token) {
-      console.log('No token found, redirecting to auth page');
-      return NextResponse.redirect(new URL('/auth/customer', request.url));
+      // Redirect to auth page if no token is present
+      const redirectUrl = request.nextUrl.pathname.startsWith('/partner')
+        ? '/auth/partner'
+        : '/auth/customer';
+      return NextResponse.redirect(new URL(redirectUrl, request.url));
     }
 
-    // トークンが存在する場合はアクセスを許可
-    console.log('Access granted to dashboard');
-    return NextResponse.next();
+    try {
+      const payload = await verify(token);
+      if (!payload || !payload.isAuthenticated) {
+        throw new Error('Invalid token');
+      }
+
+      // Restrict access to partner dashboard to partner users only
+      if (request.nextUrl.pathname.startsWith('/partner/dashboard') && payload.userType !== 'partner') {
+        return NextResponse.redirect(new URL('/dashboard', request.url));
+      }
+
+      // Restrict access to customer dashboard to customer users only
+      if (request.nextUrl.pathname.startsWith('/dashboard') && payload.userType !== 'customer') {
+        return NextResponse.redirect(new URL('/partner/dashboard', request.url));
+      }
+
+      return NextResponse.next();
+    } catch (error) {
+      // Redirect to auth page if token is invalid
+      const redirectUrl = request.nextUrl.pathname.startsWith('/partner')
+        ? '/auth/partner'
+        : '/auth/customer';
+      return NextResponse.redirect(new URL(redirectUrl, request.url));
+    }
   }
 
-  // 認証済みユーザーが認証ページにアクセスした場合の処理
-  if (request.nextUrl.pathname.startsWith('/auth')) {
-    console.log('Checking auth page access');
-    if (token) {
-      // トークンが存在する場合はダッシュボードにリダイレクト
-      console.log('Token found, redirecting to dashboard');
-      return NextResponse.redirect(new URL('/dashboard', request.url));
+  if (isAuthPath && token) {
+    try {
+      const payload = await verify(token);
+      if (payload && payload.isAuthenticated) {
+        // Redirect to appropriate dashboard if authenticated
+        const redirectUrl = payload.userType === 'partner' ? '/partner/dashboard' : '/dashboard';
+        return NextResponse.redirect(new URL(redirectUrl, request.url));
+      }
+    } catch (error) {
+      // Continue to auth page if token is invalid
+      return NextResponse.next();
     }
   }
 
@@ -32,5 +66,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/dashboard/:path*', '/auth/:path*'],
+  matcher: ['/dashboard/:path*', '/partner/dashboard/:path*', '/auth/:path*'],
 }; 

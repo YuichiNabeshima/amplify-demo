@@ -4,79 +4,90 @@ import { hash } from 'bcryptjs';
 import { sign } from 'jsonwebtoken';
 import { prisma } from '@/lib/prisma';
 
-export async function POST(request: Request) {
+export async function POST(req: Request) {
   try {
-    const body = await request.json();
-    const { email, password, name, userType, companyName, businessPhone, address } = body;
+    const { email, password, name, userType, companyName, businessPhone, address } = await req.json();
 
-    // Check if user already exists
-    const existingCustomer = await prisma.customer.findUnique({ where: { email } });
-    const existingPartner = await prisma.partner.findUnique({ where: { email } });
-
-    if (existingCustomer || existingPartner) {
+    // Validate required fields
+    if (!email || !password || !userType) {
+      console.log("Missing required fields:", { email, password, userType });
       return NextResponse.json(
-        { error: 'User already exists' },
+        { error: "Missing required fields" },
         { status: 400 }
       );
     }
 
-    const hashedPassword = await hash(password, 12);
-    let user;
-    console.log('user type: ', userType);
+    // Validate partner-specific fields
+    if (userType === "partner") {
+      if (!companyName || !businessPhone || !address) {
+        console.log("Missing partner fields:", { companyName, businessPhone, address });
+        return NextResponse.json(
+          { error: "Missing partner information" },
+          { status: 400 }
+        );
+      }
+    }
 
-    if (userType === 'customer') {
-      user = await prisma.customer.create({
+    // Validate customer-specific fields
+    if (userType === "customer" && !name) {
+      console.log("Missing customer name");
+      return NextResponse.json(
+        { error: "Name is required for customers" },
+        { status: 400 }
+      );
+    }
+
+    // メールアドレスの重複チェック
+    const existingUser = await prisma.customer.findUnique({ where: { email } });
+    const existingPartner = await prisma.partner.findUnique({ where: { email } });
+
+    if (existingUser || existingPartner) {
+      return NextResponse.json(
+        { error: 'Email already exists' },
+        { status: 400 }
+      );
+    }
+
+    // パスワードのハッシュ化
+    const hashedPassword = await hash(password, 10);
+
+    // ユーザーの作成
+    if (userType === "customer") {
+      const customer = await prisma.customer.create({
         data: {
           email,
           password: hashedPassword,
           name,
-          phone: body.phone,
-          address: body.address
-        }
+        },
       });
-    } else if (userType === 'partner') {
-      user = await prisma.partner.create({
+      return NextResponse.json({ message: "Customer created successfully" });
+    } else if (userType === "partner") {
+      const partner = await prisma.partner.create({
         data: {
           email,
           password: hashedPassword,
           companyName,
           businessPhone,
           address,
-          images: '' // 初期値として空文字列を設定
-        }
+        },
       });
+      return NextResponse.json({ message: "Partner created successfully" });
     } else {
       return NextResponse.json(
-        { error: 'Invalid user type' },
+        { error: "Invalid user type" },
         { status: 400 }
       );
     }
-
-    const token = sign(
-      { id: user.id, email: user.email, type: userType },
-      process.env.JWT_SECRET!,
-      { expiresIn: '1d' }
-    );
-
-    // Set token in cookie
-    cookies().set('token', token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 60 * 60 * 24 // 1 day
-    });
-
-    // Remove password from response
-    const { password: _, ...userWithoutPassword } = user;
-
-    return NextResponse.json({
-      user: userWithoutPassword,
-      message: 'Sign up successful'
-    });
-  } catch (error) {
-    console.error('Sign up error:', error);
+  } catch (error: any) {
+    console.error("Error creating user:", error);
+    if (error.code === "P2002") {
+      return NextResponse.json(
+        { error: "Email already exists" },
+        { status: 400 }
+      );
+    }
     return NextResponse.json(
-      { error: 'Failed to sign up' },
+      { error: "Error creating user", details: error.message },
       { status: 500 }
     );
   }

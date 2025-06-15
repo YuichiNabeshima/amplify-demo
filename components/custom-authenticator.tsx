@@ -34,6 +34,8 @@ export function CustomAuthenticator({ userType, onAuthSuccess }: AuthenticatorPr
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [user, setUser] = useState<any>(null)
   const router = useRouter()
+  const isPartner = userType === "partner"
+  const primaryColor = isPartner ? "bg-orange-500 hover:bg-orange-600" : "bg-primary hover:bg-primary/90"
 
   const [formData, setFormData] = useState<FormData>({
     email: "",
@@ -51,23 +53,38 @@ export function CustomAuthenticator({ userType, onAuthSuccess }: AuthenticatorPr
   }
 
   const validateForm = () => {
-    if (!formData.email || !formData.password) {
-      setError("Email and password are required")
+    setError("")
+
+    if (!formData.email) {
+      setError("Email is required")
+      return false
+    }
+
+    if (!formData.password) {
+      setError("Password is required")
       return false
     }
 
     if (activeTab === "signup") {
+      if (userType === "customer" && !formData.name) {
+        setError("Name is required")
+        return false
+      }
       if (formData.password !== formData.confirmPassword) {
         setError("Passwords do not match")
         return false
       }
-      if (formData.password.length < 8) {
-        setError("Password must be at least 8 characters long")
-        return false
-      }
       if (userType === "partner") {
-        if (!formData.companyName || !formData.businessPhone || !formData.address) {
-          setError("All partner information is required")
+        if (!formData.companyName) {
+          setError("Company name is required")
+          return false
+        }
+        if (!formData.businessPhone) {
+          setError("Business phone is required")
+          return false
+        }
+        if (!formData.address) {
+          setError("Business address is required")
           return false
         }
       }
@@ -78,42 +95,51 @@ export function CustomAuthenticator({ userType, onAuthSuccess }: AuthenticatorPr
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!validateForm()) return
 
-    setIsLoading(true)
-    setError("")
+    if (!validateForm()) {
+      return
+    }
 
     try {
-      const endpoint = activeTab === "signin" ? "/api/auth/signin" : "/api/auth/signup"
-      console.log('Sending request to:', endpoint)
-      const response = await fetch(endpoint, {
+      setIsLoading(true)
+      setError("")
+
+      const response = await fetch(`/api/auth/${activeTab === "signin" ? "signin" : "signup"}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          ...formData,
-          userType: userType,
+          email: formData.email,
+          password: formData.password,
+          userType,
+          ...(activeTab === "signup" && {
+            name: formData.name,
+            companyName: formData.companyName,
+            businessPhone: formData.businessPhone,
+            address: formData.address,
+          }),
         }),
       })
 
-      console.log('Response headers:', Object.fromEntries(response.headers.entries()))
       const data = await response.json()
-      console.log('Response data:', data)
 
       if (!response.ok) {
         throw new Error(data.error || "Authentication failed")
       }
 
-      setUser(data.user)
-      setIsAuthenticated(true)
-      onAuthSuccess?.(data.user)
-      console.log('Redirecting to dashboard...')
-      const dashboardPath = data.userType === "customer" ? "/dashboard" : "/dashboard/partner";
-      window.location.href = dashboardPath;
-    } catch (err: any) {
-      console.error('Sign in error:', err)
-      setError(err.message || "Authentication failed. Please try again.")
+      // Store the token
+      document.cookie = `token=${data.token}; path=/`
+
+      // Redirect based on user type
+      if (userType === "partner") {
+        window.location.href = "/partner/dashboard"
+      } else {
+        window.location.href = "/dashboard"
+      }
+    } catch (error) {
+      console.error("Authentication error:", error)
+      setError(error instanceof Error ? error.message : "Authentication failed")
     } finally {
       setIsLoading(false)
     }
@@ -121,21 +147,31 @@ export function CustomAuthenticator({ userType, onAuthSuccess }: AuthenticatorPr
 
   const handleSignOut = async () => {
     try {
-      await fetch("/api/auth/signout", { method: "POST" })
-      setIsAuthenticated(false)
-      setUser(null)
-      setFormData({
-        email: "",
-        password: "",
-        confirmPassword: "",
-        name: "",
-        companyName: "",
-        businessPhone: "",
-        address: "",
+      setIsLoading(true)
+      setError("")
+
+      const response = await fetch("/api/auth/signout", {
+        method: "POST",
       })
-      router.push("/auth/customer")
-    } catch (err: any) {
-      setError(err.message || "Sign out failed. Please try again.")
+
+      if (!response.ok) {
+        throw new Error("Failed to sign out")
+      }
+
+      // Clear the token
+      document.cookie = "token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT"
+
+      // Redirect to appropriate auth page based on user type
+      if (userType === "partner") {
+        window.location.href = "/auth/partner"
+      } else {
+        window.location.href = "/auth"
+      }
+    } catch (error) {
+      console.error("Sign out error:", error)
+      setError(error instanceof Error ? error.message : "Failed to sign out")
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -243,7 +279,7 @@ export function CustomAuthenticator({ userType, onAuthSuccess }: AuthenticatorPr
 
               <Button
                 type="submit"
-                className="w-full"
+                className={`w-full ${primaryColor}`}
                 disabled={isLoading}
               >
                 {isLoading ? "Signing in..." : "Sign In"}
@@ -259,32 +295,41 @@ export function CustomAuthenticator({ userType, onAuthSuccess }: AuthenticatorPr
                 </Alert>
               )}
 
-              <div className="space-y-2">
-                <Label htmlFor="name">
-                  {userType === "customer" ? "Name" : "Company Name"}
-                </Label>
-                <div className="relative">
-                  <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                  <Input
-                    id="name"
-                    type="text"
-                    placeholder={
-                      userType === "customer"
-                        ? "Enter your name"
-                        : "Enter company name"
-                    }
-                    value={userType === "customer" ? formData.name : formData.companyName}
-                    onChange={(e) =>
-                      handleInputChange(
-                        userType === "customer" ? "name" : "companyName",
-                        e.target.value
-                      )
-                    }
-                    className="pl-10"
-                    required
-                  />
+              {userType === "customer" && (
+                <div className="space-y-2">
+                  <Label htmlFor="name">Name</Label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                    <Input
+                      id="name"
+                      type="text"
+                      placeholder="Enter your name"
+                      value={formData.name}
+                      onChange={(e) => handleInputChange("name", e.target.value)}
+                      className="pl-10"
+                      required
+                    />
+                  </div>
                 </div>
-              </div>
+              )}
+
+              {userType === "partner" && (
+                <div className="space-y-2">
+                  <Label htmlFor="companyName">Company Name</Label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                    <Input
+                      id="companyName"
+                      type="text"
+                      placeholder="Enter company name"
+                      value={formData.companyName}
+                      onChange={(e) => handleInputChange("companyName", e.target.value)}
+                      className="pl-10"
+                      required
+                    />
+                  </div>
+                </div>
+              )}
 
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
@@ -394,7 +439,7 @@ export function CustomAuthenticator({ userType, onAuthSuccess }: AuthenticatorPr
 
               <Button
                 type="submit"
-                className="w-full"
+                className={`w-full ${primaryColor}`}
                 disabled={isLoading}
               >
                 {isLoading ? "Signing up..." : "Sign Up"}

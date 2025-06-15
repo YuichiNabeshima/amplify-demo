@@ -14,9 +14,8 @@ interface HeaderProps {
 
 export function Header({ userType, isAuthenticated }: HeaderProps) {
   const router = useRouter()
-  const { isAuthenticated: authIsAuthenticated, userType: authUserType, loading } = useAuth()
+  const { loading } = useAuth()
   const isPartner = userType === "partner"
-  const primaryColor = isPartner ? "bg-orange-500 hover:bg-orange-600" : "bg-primary hover:bg-primary/90"
   const iconColor = isPartner ? "text-orange-500" : "text-primary"
 
   const handleSignOut = async () => {
@@ -89,21 +88,27 @@ export function Header({ userType, isAuthenticated }: HeaderProps) {
             {!isAuthenticated ? (
               <>
                 <Link href="/auth/customer">
-                  <Button variant="outline">Customer Login</Button>
+                  <Button variant="outline" className="border-primary text-primary hover:bg-primary/10">
+                    Customer Login
+                  </Button>
                 </Link>
                 <Link href="/auth/partner">
-                  <Button className={primaryColor}>Partner Login</Button>
+                  <Button className="bg-orange-500 hover:bg-orange-600">
+                    Partner Login
+                  </Button>
                 </Link>
               </>
             ) : (
               <>
                 {userType === "customer" && (
                   <Link href="/dashboard">
-                    <Button variant="outline">My Dashboard</Button>
+                    <Button variant="outline" className="border-primary text-primary hover:bg-primary/10">
+                      My Dashboard
+                    </Button>
                   </Link>
                 )}
                 {userType === "partner" && (
-                  <Link href="/dashboard/partner">
+                  <Link href="/partner/dashboard">
                     <Button variant="outline" className="border-orange-500 text-orange-500 hover:bg-orange-50">
                       Partner Dashboard
                     </Button>
