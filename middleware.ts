@@ -6,7 +6,7 @@ export async function middleware(request: NextRequest) {
   const token = request.cookies.get('token')?.value;
 
   // Protected paths that require authentication
-  const protectedPaths = ['/dashboard', '/partner/dashboard'];
+  const protectedPaths = ['/dashboard', '/partner/dashboard', '/partner/settings'];
   const isProtectedPath = protectedPaths.some((path) => request.nextUrl.pathname.startsWith(path));
 
   // Authentication page paths
@@ -28,8 +28,8 @@ export async function middleware(request: NextRequest) {
         throw new Error('Invalid token');
       }
 
-      // Restrict access to partner dashboard to partner users only
-      if (request.nextUrl.pathname.startsWith('/partner/dashboard') && payload.userType !== 'partner') {
+      // Restrict access to partner routes to partner users only
+      if (request.nextUrl.pathname.startsWith('/partner') && payload.userType !== 'partner') {
         return NextResponse.redirect(new URL('/dashboard', request.url));
       }
 
@@ -62,9 +62,24 @@ export async function middleware(request: NextRequest) {
     }
   }
 
+  if (request.nextUrl.pathname.startsWith("/partner")) {
+    if (!token) {
+      return NextResponse.redirect(new URL("/auth/partner", request.url))
+    }
+
+    try {
+      const payload = await verify(token)
+      if (!payload || payload.type !== "partner") {
+        return NextResponse.redirect(new URL("/auth/partner", request.url))
+      }
+    } catch (error) {
+      return NextResponse.redirect(new URL("/auth/partner", request.url))
+    }
+  }
+
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ['/dashboard/:path*', '/partner/dashboard/:path*', '/auth/:path*'],
+  matcher: ['/dashboard/:path*', '/partner/:path*', '/auth/:path*'],
 }; 

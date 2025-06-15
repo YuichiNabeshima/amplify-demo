@@ -37,6 +37,9 @@ model Partner {
   businessPhone String
   address       String
   images        String?   // Comma-separated image URLs
+  specialties   String[]  // Array of specialties
+  servicePlans  Json?     // JSON array of service plans
+  description   String?   // Company description
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   bookings      Booking[]
