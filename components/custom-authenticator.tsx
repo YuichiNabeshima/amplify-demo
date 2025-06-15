@@ -1,7 +1,5 @@
 "use client"
 
-import type React from "react"
-
 import { useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -9,7 +7,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Eye, EyeOff, Mail, Lock, User, Building2, Phone } from "lucide-react"
+import { Eye, EyeOff, Mail, Lock, User } from "lucide-react"
+import { useRouter } from "next/navigation"
 
 interface AuthenticatorProps {
   userType: "customer" | "partner"
@@ -23,6 +22,7 @@ interface FormData {
   name?: string
   companyName?: string
   businessPhone?: string
+  address?: string
 }
 
 export function CustomAuthenticator({ userType, onAuthSuccess }: AuthenticatorProps) {
@@ -33,6 +33,7 @@ export function CustomAuthenticator({ userType, onAuthSuccess }: AuthenticatorPr
   const [error, setError] = useState("")
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [user, setUser] = useState<any>(null)
+  const router = useRouter()
 
   const [formData, setFormData] = useState<FormData>({
     email: "",
@@ -41,6 +42,7 @@ export function CustomAuthenticator({ userType, onAuthSuccess }: AuthenticatorPr
     name: "",
     companyName: "",
     businessPhone: "",
+    address: "",
   })
 
   const handleInputChange = (field: keyof FormData, value: string) => {
@@ -63,9 +65,11 @@ export function CustomAuthenticator({ userType, onAuthSuccess }: AuthenticatorPr
         setError("Password must be at least 8 characters long")
         return false
       }
-      if (userType === "partner" && !formData.companyName) {
-        setError("Company name is required")
-        return false
+      if (userType === "partner") {
+        if (!formData.companyName || !formData.businessPhone || !formData.address) {
+          setError("All partner information is required")
+          return false
+        }
       }
     }
 
@@ -80,66 +84,76 @@ export function CustomAuthenticator({ userType, onAuthSuccess }: AuthenticatorPr
     setError("")
 
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1500))
+      const endpoint = activeTab === "signin" ? "/api/auth/signin" : "/api/auth/signup"
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          ...formData,
+          userType: userType,
+        }),
+      })
 
-      // Mock successful authentication
-      const mockUser = {
-        email: formData.email,
-        name: formData.name || formData.email.split("@")[0],
-        companyName: formData.companyName,
-        businessPhone: formData.businessPhone,
-        userType,
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || "Authentication failed")
       }
 
-      setUser(mockUser)
+      setUser(data.user)
       setIsAuthenticated(true)
-      onAuthSuccess?.(mockUser)
-    } catch (err) {
-      setError("Authentication failed. Please try again.")
+      onAuthSuccess?.(data.user)
+      router.push("/dashboard")
+    } catch (err: any) {
+      setError(err.message || "Authentication failed. Please try again.")
     } finally {
       setIsLoading(false)
     }
   }
 
-  const handleSignOut = () => {
-    setIsAuthenticated(false)
-    setUser(null)
-    setFormData({
-      email: "",
-      password: "",
-      confirmPassword: "",
-      name: "",
-      companyName: "",
-      businessPhone: "",
-    })
+  const handleSignOut = async () => {
+    try {
+      await fetch("/api/auth/signout", { method: "POST" })
+      setIsAuthenticated(false)
+      setUser(null)
+      setFormData({
+        email: "",
+        password: "",
+        confirmPassword: "",
+        name: "",
+        companyName: "",
+        businessPhone: "",
+        address: "",
+      })
+      router.push("/auth/customer")
+    } catch (err: any) {
+      setError(err.message || "Sign out failed. Please try again.")
+    }
   }
 
   if (isAuthenticated && user) {
-    const primaryButtonClass =
-      userType === "partner" ? "bg-orange-500 hover:bg-orange-600" : "bg-primary hover:bg-primary/90"
-
     return (
       <Card>
         <CardHeader>
           <CardTitle className="text-center">Welcome!</CardTitle>
         </CardHeader>
         <CardContent className="text-center space-y-4">
-          <div className={`p-4 ${userType === "partner" ? "bg-orange-50" : "bg-green-50"} rounded-lg`}>
-            <h3 className={`font-semibold ${userType === "partner" ? "text-orange-800" : "text-green-800"} mb-2`}>
-              {userType === "partner" ? "Partner Account" : "Customer Account"}
+          <div className="p-4 bg-green-50 rounded-lg">
+            <h3 className="font-semibold text-green-800 mb-2">
+              {userType === "customer" ? "Customer" : "Partner"} Account
             </h3>
-            <p className={`${userType === "partner" ? "text-orange-700" : "text-green-700"}`}>
-              Welcome, {user.companyName || user.name || user.email}!
+            <p className="text-green-700">
+              Welcome, {user.name || user.companyName || user.email}!
             </p>
           </div>
 
           <div className="space-y-3">
             <Button
-              className={`w-full ${primaryButtonClass}`}
+              className="w-full bg-primary hover:bg-primary/90"
               onClick={() => {
-                const dashboardUrl = userType === "partner" ? "/partner/dashboard" : "/dashboard"
-                window.location.href = dashboardUrl
+                router.push("/dashboard")
               }}
             >
               Go to Dashboard
@@ -153,13 +167,12 @@ export function CustomAuthenticator({ userType, onAuthSuccess }: AuthenticatorPr
     )
   }
 
-  const primaryButtonClass =
-    userType === "partner" ? "bg-orange-500 hover:bg-orange-600" : "bg-primary hover:bg-primary/90"
-
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-center">{userType === "partner" ? "Partner Portal" : "Customer Portal"}</CardTitle>
+        <CardTitle className="text-center">
+          {userType === "customer" ? "Customer" : "Partner"} Portal
+        </CardTitle>
       </CardHeader>
       <CardContent>
         <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -168,14 +181,20 @@ export function CustomAuthenticator({ userType, onAuthSuccess }: AuthenticatorPr
             <TabsTrigger value="signup">Sign Up</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="signin" className="space-y-4 mt-6">
+          <TabsContent value="signin">
             <form onSubmit={handleSubmit} className="space-y-4">
+              {error && (
+                <Alert variant="destructive">
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
+
               <div className="space-y-2">
-                <Label htmlFor="signin-email">Email Address</Label>
+                <Label htmlFor="email">Email</Label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                  <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                   <Input
-                    id="signin-email"
+                    id="email"
                     type="email"
                     placeholder="Enter your email"
                     value={formData.email}
@@ -187,52 +206,87 @@ export function CustomAuthenticator({ userType, onAuthSuccess }: AuthenticatorPr
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="signin-password">Password</Label>
+                <Label htmlFor="password">Password</Label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                  <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                   <Input
-                    id="signin-password"
+                    id="password"
                     type={showPassword ? "text" : "password"}
                     placeholder="Enter your password"
                     value={formData.password}
                     onChange={(e) => handleInputChange("password", e.target.value)}
-                    className="pl-10 pr-10"
+                    className="pl-10"
                     required
                   />
-                  <button
+                  <Button
                     type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="absolute right-0 top-0 h-full px-3"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
                   >
-                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </button>
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </Button>
                 </div>
               </div>
 
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={isLoading}
+              >
+                {isLoading ? "Signing in..." : "Sign In"}
+              </Button>
+            </form>
+          </TabsContent>
+
+          <TabsContent value="signup">
+            <form onSubmit={handleSubmit} className="space-y-4">
               {error && (
                 <Alert variant="destructive">
                   <AlertDescription>{error}</AlertDescription>
                 </Alert>
               )}
 
-              <Button type="submit" className={`w-full ${primaryButtonClass}`} disabled={isLoading}>
-                {isLoading ? "Signing In..." : "Sign In"}
-              </Button>
-            </form>
-          </TabsContent>
-
-          <TabsContent value="signup" className="space-y-4 mt-6">
-            <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="signup-email">
-                  {userType === "partner" ? "Business Email Address" : "Email Address"}
+                <Label htmlFor="name">
+                  {userType === "customer" ? "Name" : "Company Name"}
                 </Label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                  <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                   <Input
-                    id="signup-email"
+                    id="name"
+                    type="text"
+                    placeholder={
+                      userType === "customer"
+                        ? "Enter your name"
+                        : "Enter company name"
+                    }
+                    value={userType === "customer" ? formData.name : formData.companyName}
+                    onChange={(e) =>
+                      handleInputChange(
+                        userType === "customer" ? "name" : "companyName",
+                        e.target.value
+                      )
+                    }
+                    className="pl-10"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <Input
+                    id="email"
                     type="email"
-                    placeholder={userType === "partner" ? "Enter your business email" : "Enter your email"}
+                    placeholder="Enter your email"
                     value={formData.email}
                     onChange={(e) => handleInputChange("email", e.target.value)}
                     className="pl-10"
@@ -241,113 +295,102 @@ export function CustomAuthenticator({ userType, onAuthSuccess }: AuthenticatorPr
                 </div>
               </div>
 
-              {userType === "customer" && (
-                <div className="space-y-2">
-                  <Label htmlFor="signup-name">Full Name (Optional)</Label>
-                  <div className="relative">
-                    <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                    <Input
-                      id="signup-name"
-                      type="text"
-                      placeholder="Enter your full name"
-                      value={formData.name}
-                      onChange={(e) => handleInputChange("name", e.target.value)}
-                      className="pl-10"
-                    />
-                  </div>
-                </div>
-              )}
-
-              {userType === "partner" && (
-                <>
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-company">Company Name</Label>
-                    <div className="relative">
-                      <Building2 className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                      <Input
-                        id="signup-company"
-                        type="text"
-                        placeholder="Enter your company name"
-                        value={formData.companyName}
-                        onChange={(e) => handleInputChange("companyName", e.target.value)}
-                        className="pl-10"
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-phone">Business Phone</Label>
-                    <div className="relative">
-                      <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                      <Input
-                        id="signup-phone"
-                        type="tel"
-                        placeholder="Enter your business phone number"
-                        value={formData.businessPhone}
-                        onChange={(e) => handleInputChange("businessPhone", e.target.value)}
-                        className="pl-10"
-                        required
-                      />
-                    </div>
-                  </div>
-                </>
-              )}
-
               <div className="space-y-2">
-                <Label htmlFor="signup-password">Password</Label>
+                <Label htmlFor="password">Password</Label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                  <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                   <Input
-                    id="signup-password"
+                    id="password"
                     type={showPassword ? "text" : "password"}
                     placeholder="Enter your password"
                     value={formData.password}
                     onChange={(e) => handleInputChange("password", e.target.value)}
-                    className="pl-10 pr-10"
+                    className="pl-10"
                     required
                   />
-                  <button
+                  <Button
                     type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="absolute right-0 top-0 h-full px-3"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
                   >
-                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </button>
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </Button>
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="signup-confirm-password">Confirm Password</Label>
+                <Label htmlFor="confirmPassword">Confirm Password</Label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                  <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                   <Input
-                    id="signup-confirm-password"
+                    id="confirmPassword"
                     type={showConfirmPassword ? "text" : "password"}
                     placeholder="Confirm your password"
                     value={formData.confirmPassword}
-                    onChange={(e) => handleInputChange("confirmPassword", e.target.value)}
-                    className="pl-10 pr-10"
+                    onChange={(e) =>
+                      handleInputChange("confirmPassword", e.target.value)
+                    }
+                    className="pl-10"
                     required
                   />
-                  <button
+                  <Button
                     type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="absolute right-0 top-0 h-full px-3"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
                   >
-                    {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </button>
+                    {showConfirmPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </Button>
                 </div>
               </div>
 
-              {error && (
-                <Alert variant="destructive">
-                  <AlertDescription>{error}</AlertDescription>
-                </Alert>
+              {userType === "partner" && (
+                <>
+                  <div className="space-y-2">
+                    <Label htmlFor="businessPhone">Business Phone</Label>
+                    <Input
+                      id="businessPhone"
+                      type="tel"
+                      placeholder="Enter business phone"
+                      value={formData.businessPhone}
+                      onChange={(e) =>
+                        handleInputChange("businessPhone", e.target.value)
+                      }
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="address">Address</Label>
+                    <Input
+                      id="address"
+                      type="text"
+                      placeholder="Enter business address"
+                      value={formData.address}
+                      onChange={(e) => handleInputChange("address", e.target.value)}
+                      required
+                    />
+                  </div>
+                </>
               )}
 
-              <Button type="submit" className={`w-full ${primaryButtonClass}`} disabled={isLoading}>
-                {isLoading ? "Creating Account..." : "Create Account"}
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={isLoading}
+              >
+                {isLoading ? "Signing up..." : "Sign Up"}
               </Button>
             </form>
           </TabsContent>
@@ -355,4 +398,4 @@ export function CustomAuthenticator({ userType, onAuthSuccess }: AuthenticatorPr
       </CardContent>
     </Card>
   )
-}
+} 

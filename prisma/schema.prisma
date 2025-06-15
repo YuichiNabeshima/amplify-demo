@@ -15,11 +15,47 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Booking {
-    id               Int           @id @default(autoincrement())
-    date             DateTime      @db.Date
-    updated_at       DateTime      @updatedAt
-    created_at       DateTime      @default(now())
+// Customer model for painting service users
+model Customer {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  password      String    // Hashed password
+  name          String?
+  phone         String?
+  address       String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  bookings      Booking[]
+}
 
-  @@map("booking")
+// Partner model for painting service providers
+model Partner {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  password      String    // Hashed password
+  companyName   String
+  businessPhone String
+  address       String
+  images        String    // Comma-separated image URLs
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  bookings      Booking[]
+}
+
+// Booking model for service appointments
+model Booking {
+  id            String    @id @default(uuid())
+  date          DateTime
+  servicePlan   String    // Service plan type: "basic", "standard", "premium", etc.
+  status        String    // Booking status: "pending", "confirmed", "completed", "cancelled"
+  notes         String?   // Additional booking information
+  customerId    String
+  partnerId     String
+  customer      Customer  @relation(fields: [customerId], references: [id])
+  partner       Partner   @relation(fields: [partnerId], references: [id])
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([customerId])
+  @@index([partnerId])
 }
