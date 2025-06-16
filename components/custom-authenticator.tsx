@@ -54,84 +54,84 @@ export function CustomAuthenticator({ userType, onAuthSuccess }: AuthenticatorPr
     setError("")
   }
 
-  const validateForm = () => {
-    setError("")
+  // const validateForm = () => {
+  //   setError("")
 
-    if (!formData.email) {
-      setError("Email is required")
-      return false
-    }
+  //   if (!formData.email) {
+  //     setError("Email is required")
+  //     return false
+  //   }
 
-    if (!formData.password) {
-      setError("Password is required")
-      return false
-    }
+  //   if (!formData.password) {
+  //     setError("Password is required")
+  //     return false
+  //   }
 
-    if (activeTab === "signup") {
-      if (userType === "customer" && !formData.name) {
-        setError("Name is required")
-        return false
-      }
-      if (formData.password !== formData.confirmPassword) {
-        setError("Passwords do not match")
-        return false
-      }
-      if (userType === "partner") {
-        if (!formData.companyName) {
-          setError("Company name is required")
-          return false
-        }
-        if (!formData.businessPhone) {
-          setError("Business phone is required")
-          return false
-        }
-        if (!formData.address) {
-          setError("Business address is required")
-          return false
-        }
-      }
-    }
+  //   if (activeTab === "signup") {
+  //     if (userType === "customer" && !formData.name) {
+  //       setError("Name is required")
+  //       return false
+  //     }
+  //     if (formData.password !== formData.confirmPassword) {
+  //       setError("Passwords do not match")
+  //       return false
+  //     }
+  //     if (userType === "partner") {
+  //       if (!formData.companyName) {
+  //         setError("Company name is required")
+  //         return false
+  //       }
+  //       if (!formData.businessPhone) {
+  //         setError("Business phone is required")
+  //         return false
+  //       }
+  //       if (!formData.address) {
+  //         setError("Business address is required")
+  //         return false
+  //       }
+  //     }
+  //   }
 
-    return true
-  }
+  //   return true
+  // }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!validateForm()) {
-      return
-    }
+    // if (!validateForm()) {
+    //   return
+    // }
 
     try {
       setIsLoading(true)
       setError("")
 
-      const response = await post({ 
-        apiName: 'myHttpApi',
-        path: activeTab === "signin" ? '/signin' : '/signup',
-        options: {
-          body: {
-            email: formData.email,
-          password: formData.password,
-            userType,
-            ...(activeTab === "signup" && {
-              name: formData.name,
-              companyName: formData.companyName,
-              businessPhone: formData.businessPhone,
-              address: formData.address,
-            }),
-          }
-        }
-      }).response;
+      // const response = await post({ 
+      //   apiName: 'myHttpApi',
+      //   path: activeTab === "signin" ? '/signin' : '/signup',
+      //   options: {
+      //     body: {
+      //       email: formData.email,
+      //     password: formData.password,
+      //       userType,
+      //       ...(activeTab === "signup" && {
+      //         name: formData.name,
+      //         companyName: formData.companyName,
+      //         businessPhone: formData.businessPhone,
+      //         address: formData.address,
+      //       }),
+      //     }
+      //   }
+      // }).response;
 
-      const data = await response.body.json() as unknown as AuthResponse;
+      // const data = await response.body.json() as unknown as AuthResponse;
 
-      if (!data.token) {
-        throw new Error("Authentication failed")
-      }
+      // if (!data.token) {
+      //   throw new Error("Authentication failed")
+      // }
 
       // Store the token
-      document.cookie = `token=${data.token}; path=/`
+      // document.cookie = `token=${data.token}; path=/`
 
       // Redirect based on user type
       if (userType === "partner") {
@@ -152,13 +152,13 @@ export function CustomAuthenticator({ userType, onAuthSuccess }: AuthenticatorPr
     setIsLoading(true)
       setError("")
 
-      await post({ 
-        apiName: 'myHttpApi',
-        path: '/signout'
-      }).response;
+      // await post({ 
+      //   apiName: 'myHttpApi',
+      //   path: '/signout'
+      // }).response;
 
       // Clear the token
-      document.cookie = "token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT"
+      // document.cookie = "token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT"
 
       // Redirect to appropriate auth page based on user type
       if (userType === "partner") {

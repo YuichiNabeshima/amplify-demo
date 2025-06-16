@@ -20,33 +20,13 @@ export function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/auth" className="text-gray-600 hover:text-primary text-sm">
+                <Link href="/auth/customer" className="text-gray-600 hover:text-primary text-sm">
                   Customer Login
                 </Link>
               </li>
               <li>
                 <Link href="/auth/partner" className="text-gray-600 hover:text-primary text-sm">
                   Partner Login
-                </Link>
-              </li>
-            </ul>
-          </div>
-          <div>
-            <h3 className="font-semibold text-gray-900 mb-4">Support</h3>
-            <ul className="space-y-2">
-              <li>
-                <Link href="/faq" className="text-gray-600 hover:text-primary text-sm">
-                  FAQ
-                </Link>
-              </li>
-              <li>
-                <Link href="/contact" className="text-gray-600 hover:text-primary text-sm">
-                  Contact Us
-                </Link>
-              </li>
-              <li>
-                <Link href="/privacy" className="text-gray-600 hover:text-primary text-sm">
-                  Privacy Policy
                 </Link>
               </li>
             </ul>

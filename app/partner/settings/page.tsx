@@ -65,7 +65,7 @@ export default function PartnerSettingsPage() {
       }
     }
 
-    fetchPartnerData()
+    // fetchPartnerData()
   }, [toast])
 
   const handleSave = async () => {
@@ -121,9 +121,9 @@ export default function PartnerSettingsPage() {
     })
   }
 
-  if (loading) {
-    return null
-  }
+  // if (loading) {
+  //   return null
+  // }
 
   return (
     <div className="max-w-4xl mx-auto">

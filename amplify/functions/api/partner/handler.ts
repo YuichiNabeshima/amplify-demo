@@ -1,5 +1,5 @@
 import type { APIGatewayProxyHandlerV2 } from "aws-lambda";
-import { PrismaClient, Partner } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import * as dotenv from 'dotenv';
@@ -13,9 +13,9 @@ type PartnerResponse = {
   id: string;
   email: string;
   companyName: string;
-  businessPhone: string | null;
-  address: string | null;
-  description: string | null;
+  businessPhone: string;
+  address: string;
+  description: string;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -26,7 +26,7 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return {
         statusCode: 401,
-        body: JSON.stringify({ message: '認証が必要です' }),
+        body: JSON.stringify({ message: 'Authentication required' }),
       };
     }
 
@@ -37,14 +37,14 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
     } catch (error) {
       return {
         statusCode: 401,
-        body: JSON.stringify({ message: '無効なトークンです' }),
+        body: JSON.stringify({ message: 'Invalid token' }),
       };
     }
 
     if (decoded.type !== 'PARTNER') {
       return {
         statusCode: 403,
-        body: JSON.stringify({ message: 'パートナーのみアクセス可能です' }),
+        body: JSON.stringify({ message: 'Access restricted to partners only' }),
       };
     }
 
@@ -57,7 +57,7 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
         if (!partner) {
           return {
             statusCode: 404,
-            body: JSON.stringify({ message: 'パートナーが見つかりません' }),
+            body: JSON.stringify({ message: 'Partner not found' }),
           };
         }
 
@@ -81,7 +81,7 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
         if (!event.body) {
           return {
             statusCode: 400,
-            body: JSON.stringify({ message: 'リクエストボディが必要です' }),
+            body: JSON.stringify({ message: 'Request body is required' }),
           };
         }
 
@@ -93,7 +93,7 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
         if (!partner) {
           return {
             statusCode: 404,
-            body: JSON.stringify({ message: 'パートナーが見つかりません' }),
+            body: JSON.stringify({ message: 'Partner not found' }),
           };
         }
 
@@ -102,7 +102,7 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
           if (!isValidPassword) {
             return {
               statusCode: 400,
-              body: JSON.stringify({ message: '現在のパスワードが正しくありません' }),
+              body: JSON.stringify({ message: 'Current password is incorrect' }),
             };
           }
 
@@ -168,7 +168,7 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
     console.error('Error:', error);
     return {
       statusCode: 500,
-      body: JSON.stringify({ message: 'サーバーエラーが発生しました' }),
+      body: JSON.stringify({ message: 'Internal server error' }),
     };
   }
 }; 

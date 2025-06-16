@@ -15,8 +15,6 @@ import { Star, MapPin, Phone, Mail, Calendar, Clock } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
 import { useParams } from "next/navigation"
-import { get } from '@/src/lib/amplify'
-import { Partner } from '@/src/types/api'
 
 interface ServicePlan {
   id: string
@@ -39,9 +37,84 @@ interface PartnerData {
   servicePlans: ServicePlan[]
 }
 
+const dummyPartners: Record<string, PartnerData> = {
+  "1": {
+    id: "1",
+    name: "Paint Pro Services",
+    address: "123 Main St, New York, NY",
+    phone: "(212) 555-0123",
+    email: "contact@paintpro.com",
+    rating: 4.8,
+    reviewCount: 156,
+    description: "Professional painting services for residential and commercial properties. With over 15 years of experience, we deliver high-quality results and exceptional customer service.",
+    images: [
+      "https://images.unsplash.com/photo-1581578731548-c64695cc6952?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80",
+      "https://images.unsplash.com/photo-1581578731548-c64695cc6952?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80",
+      "https://images.unsplash.com/photo-1581578731548-c64695cc6952?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80"
+    ],
+    specialties: ["Interior", "Exterior", "Commercial"],
+    servicePlans: [
+      {
+        id: "plan1",
+        name: "Basic Interior Painting",
+        price: "$2,500",
+        description: "Standard interior painting service for up to 3 rooms"
+      },
+      {
+        id: "plan2",
+        name: "Premium Exterior Painting",
+        price: "$5,000",
+        description: "Complete exterior painting with premium materials"
+      },
+      {
+        id: "plan3",
+        name: "Commercial Space Painting",
+        price: "$8,000",
+        description: "Professional painting service for commercial properties"
+      }
+    ]
+  },
+  "2": {
+    id: "2",
+    name: "Elite Painters",
+    address: "456 Park Ave, Boston, MA",
+    phone: "(617) 555-0123",
+    email: "info@elitepainters.com",
+    rating: 4.9,
+    reviewCount: 203,
+    description: "Luxury painting services specializing in high-end residential properties. We use only the finest materials and techniques to create stunning finishes.",
+    images: [
+      "https://images.unsplash.com/photo-1581578731548-c64695cc6952?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80",
+      "https://images.unsplash.com/photo-1581578731548-c64695cc6952?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80",
+      "https://images.unsplash.com/photo-1581578731548-c64695cc6952?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80"
+    ],
+    specialties: ["Luxury Homes", "Custom Finishes", "Decorative"],
+    servicePlans: [
+      {
+        id: "plan1",
+        name: "Luxury Interior Package",
+        price: "$3,000",
+        description: "Premium interior painting with custom finishes"
+      },
+      {
+        id: "plan2",
+        name: "Decorative Painting",
+        price: "$6,000",
+        description: "Specialized decorative painting techniques"
+      },
+      {
+        id: "plan3",
+        name: "Complete Home Transformation",
+        price: "$10,000",
+        description: "Full home painting with premium materials and finishes"
+      }
+    ]
+  }
+};
+
 export default function PartnerDetailPage() {
   const params = useParams()
-  const [partnerData, setPartnerData] = useState<Partner | null>(null)
+  const [partnerData, setPartnerData] = useState<PartnerData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [selectedDate, setSelectedDate] = useState("")
@@ -52,11 +125,13 @@ export default function PartnerDetailPage() {
     const fetchPartnerData = async () => {
       try {
         setLoading(true)
-        const restOperation = await get({ 
-          apiName: 'myHttpApi',
-          path: `/partners/${params.id}` 
-        }).response;
-        const data = await restOperation.body.json() as unknown as Partner;
+        const partnerId = params.id as string
+        const data = dummyPartners[partnerId]
+        
+        if (!data) {
+          throw new Error("Partner not found")
+        }
+        
         setPartnerData(data)
       } catch (error) {
         console.error("Error fetching partner:", error)
@@ -67,7 +142,7 @@ export default function PartnerDetailPage() {
     }
 
     if (params.id) {
-    fetchPartnerData()
+      fetchPartnerData()
     }
   }, [params.id])
 
@@ -111,7 +186,7 @@ export default function PartnerDetailPage() {
             <Card className="mb-6 pt-0">
               <div className="relative h-64 md:h-80">
                 <Image
-                  src={partnerData.images?.[0] || "/img/common/mock_01.jpg"}
+                  src={partnerData.images[0]}
                   alt={partnerData.name}
                   fill
                   className="object-cover rounded-t-lg"
@@ -162,10 +237,10 @@ export default function PartnerDetailPage() {
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-2 md:gap-4">
-                  {Array.from({ length: 3 }, (_, i) => (
+                  {partnerData.images.map((image, i) => (
                     <div key={i} className="relative h-32 rounded-lg overflow-hidden">
                       <Image
-                        src={`/img/common/mock_${String(i + 1).padStart(2, '0')}.jpg`}
+                        src={image}
                         alt={`Project ${i + 1}`}
                         fill
                         className="object-cover hover:scale-105 transition-transform"

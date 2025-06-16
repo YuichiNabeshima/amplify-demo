@@ -11,8 +11,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Star, MapPin, Search } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
-import { get } from '@/src/lib/amplify'
-import { Partner, PartnersResponse } from '@/src/types/api'
 
 const specialties = [
   "Interior",
@@ -27,9 +25,72 @@ const specialties = [
   "Industrial",
 ]
 
+const dummyPartners = [
+  {
+    id: "1",
+    name: "Paint Pro Services",
+    address: "123 Main St, New York, NY",
+    rating: 4.8,
+    reviewCount: 156,
+    specialties: ["Interior", "Exterior", "Commercial"],
+    price: "$2,500 - $5,000",
+    images: ["https://images.unsplash.com/photo-1581578731548-c64695cc6952?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80"]
+  },
+  {
+    id: "2",
+    name: "Elite Painters",
+    address: "456 Park Ave, Boston, MA",
+    rating: 4.9,
+    reviewCount: 203,
+    specialties: ["Luxury Homes", "Custom Finishes", "Decorative"],
+    price: "$3,000 - $6,000",
+    images: ["https://images.unsplash.com/photo-1581578731548-c64695cc6952?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80"]
+  },
+  {
+    id: "3",
+    name: "Quick Paint Solutions",
+    address: "789 Market St, San Francisco, CA",
+    rating: 4.5,
+    reviewCount: 98,
+    specialties: ["Quick Service", "Residential", "Interior"],
+    price: "$1,500 - $3,000",
+    images: ["https://images.unsplash.com/photo-1581578731548-c64695cc6952?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80"]
+  },
+  {
+    id: "4",
+    name: "Color Masters",
+    address: "321 Oak St, Chicago, IL",
+    rating: 4.7,
+    reviewCount: 142,
+    specialties: ["Color Consultation", "Interior", "Decorative"],
+    price: "$2,000 - $4,000",
+    images: ["https://images.unsplash.com/photo-1581578731548-c64695cc6952?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80"]
+  },
+  {
+    id: "5",
+    name: "Industrial Coatings Inc",
+    address: "654 Industrial Blvd, Houston, TX",
+    rating: 4.6,
+    reviewCount: 87,
+    specialties: ["Industrial", "Exterior", "Commercial"],
+    price: "$4,000 - $8,000",
+    images: ["https://images.unsplash.com/photo-1581578731548-c64695cc6952?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80"]
+  },
+  {
+    id: "6",
+    name: "Luxury Paint & Design",
+    address: "987 Rodeo Dr, Los Angeles, CA",
+    rating: 4.9,
+    reviewCount: 178,
+    specialties: ["Luxury Homes", "Custom Finishes", "Color Consultation"],
+    price: "$5,000 - $10,000",
+    images: ["https://images.unsplash.com/photo-1581578731548-c64695cc6952?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80"]
+  }
+];
+
 export default function PartnersPage() {
-  const [partners, setPartners] = useState<Partner[]>([])
-  const [loading, setLoading] = useState(true)
+  const [partners, setPartners] = useState(dummyPartners)
+  const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [search, setSearch] = useState("")
   const [specialty, setSpecialty] = useState("all")
@@ -38,32 +99,19 @@ export default function PartnersPage() {
   const [itemsPerPage] = useState(6)
 
   useEffect(() => {
-    const fetchPartners = async () => {
-      try {
-        setLoading(true)
-        const params = new URLSearchParams({
-          page: currentPage.toString(),
-          limit: itemsPerPage.toString(),
-          ...(search && { search }),
-          ...(specialty && specialty !== "all" && { specialty }),
-        })
+    const filteredPartners = dummyPartners.filter(partner => {
+      const matchesSearch = partner.name.toLowerCase().includes(search.toLowerCase()) ||
+                          partner.address.toLowerCase().includes(search.toLowerCase());
+      const matchesSpecialty = specialty === "all" || partner.specialties.includes(specialty);
+      return matchesSearch && matchesSpecialty;
+    });
 
-        const restOperation = await get({ 
-          apiName: 'myHttpApi',
-          path: `/partners?${params}` 
-        }).response;
-        const data = await restOperation.body.json() as unknown as PartnersResponse;
-        setPartners(data.partners)
-        setTotalPages(data.totalPages)
-      } catch (error) {
-        console.error("Error fetching partners:", error)
-        setError("Failed to load partners. Please try again later.")
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchPartners()
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const paginatedPartners = filteredPartners.slice(startIndex, endIndex);
+    
+    setPartners(paginatedPartners);
+    setTotalPages(Math.ceil(filteredPartners.length / itemsPerPage));
   }, [currentPage, search, specialty, itemsPerPage])
 
   if (loading) {

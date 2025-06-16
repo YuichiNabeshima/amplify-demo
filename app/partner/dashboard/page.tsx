@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { Header } from "@/components/header"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -8,37 +8,68 @@ import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Calendar, MapPin, Clock, User, Phone, Mail, Search, Filter } from "lucide-react"
-import { get } from '@/src/lib/amplify'
-import { Booking } from '@/src/types/api'
+
+interface Booking {
+  id: string
+  customer: {
+    name: string
+    email: string
+    phone: string
+    address: string
+  }
+  servicePlan: string
+  date: string
+  status: "pending" | "confirmed" | "completed" | "cancelled"
+  price: string
+  notes?: string
+}
 
 export default function PartnerDashboardPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
   const [selectedBooking, setSelectedBooking] = useState<string | null>(null)
-  const [bookings, setBookings] = useState<Booking[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-
-  useEffect(() => {
-    const fetchBookings = async () => {
-      try {
-        setIsLoading(true)
-        const restOperation = await get({ 
-          apiName: 'myHttpApi',
-          path: '/bookings' 
-        }).response
-        const data = await restOperation.body.json() as unknown as Booking[]
-        setBookings(data)
-      } catch (error) {
-        console.error("Error fetching bookings:", error)
-        setError("Failed to load bookings. Please try again later.")
-      } finally {
-        setIsLoading(false)
-      }
+  const [bookings] = useState<Booking[]>([
+    {
+      id: '1',
+      customer: {
+        name: 'John Smith',
+        email: 'john@example.com',
+        phone: '123-456-7890',
+        address: '123 Main St, New York, NY'
+      },
+      servicePlan: 'Exterior Painting',
+      date: new Date().toISOString(),
+      status: 'pending',
+      price: '$1,500',
+      notes: 'Please paint the front door as well'
+    },
+    {
+      id: '2',
+      customer: {
+        name: 'Jane Doe',
+        email: 'jane@example.com',
+        phone: '987-654-3210',
+        address: '456 Park Ave, New York, NY'
+      },
+      servicePlan: 'Interior Painting',
+      date: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+      status: 'confirmed',
+      price: '$2,000'
+    },
+    {
+      id: '3',
+      customer: {
+        name: 'Bob Wilson',
+        email: 'bob@example.com',
+        phone: '555-123-4567',
+        address: '789 Broadway, New York, NY'
+      },
+      servicePlan: 'Exterior Painting',
+      date: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString(),
+      status: 'completed',
+      price: '$1,800'
     }
-
-    fetchBookings()
-  }, [])
+  ])
 
   const filteredBookings = bookings.filter((booking) => {
     const matchesSearch =
@@ -68,28 +99,6 @@ export default function PartnerDashboardPage() {
       default:
         return "bg-gray-100 text-gray-800"
     }
-  }
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <Header userType="partner" isAuthenticated={true} />
-        <main className="container mx-auto px-4 py-8">
-          <div className="text-center">Loading bookings...</div>
-        </main>
-      </div>
-    )
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <Header userType="partner" isAuthenticated={true} />
-        <main className="container mx-auto px-4 py-8">
-          <div className="text-center text-red-600">{error}</div>
-        </main>
-      </div>
-    )
   }
 
   return (
@@ -187,7 +196,7 @@ export default function PartnerDashboardPage() {
         {/* Bookings List */}
         <Card>
           <CardHeader>
-            <CardTitle>Customer Bookings ({filteredBookings.length})</CardTitle>
+            <CardTitle>Bookings ({filteredBookings.length})</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
@@ -209,7 +218,9 @@ export default function PartnerDashboardPage() {
                     </div>
                     <div className="text-right">
                       <Badge className={getStatusColor(booking.status)}>
-                        {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
+                        {booking.status === 'pending' ? 'Pending' :
+                         booking.status === 'confirmed' ? 'Confirmed' :
+                         booking.status === 'completed' ? 'Completed' : 'Cancelled'}
                       </Badge>
                       <p className="text-lg font-semibold text-primary mt-1">{booking.price}</p>
                     </div>
@@ -219,7 +230,12 @@ export default function PartnerDashboardPage() {
                     <div className="flex items-center">
                       <Calendar className="h-4 w-4 mr-2" />
                       <span>
-                        {new Date(booking.date).toLocaleDateString()}
+                        {new Date(booking.date).toLocaleDateString('en-US', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric',
+                          weekday: 'long'
+                        })}
                       </span>
                     </div>
                     <div className="flex items-center">

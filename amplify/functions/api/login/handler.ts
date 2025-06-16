@@ -9,7 +9,7 @@ dotenv.config();
 const prisma = new PrismaClient();
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 
-type SignupResponse = {
+type LoginResponse = {
   id: string;
   email: string;
   type: string;
@@ -31,7 +31,7 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
           };
         }
 
-        const { email, password, type, name, phone, companyName, businessPhone, address, description } = JSON.parse(event.body);
+        const { email, password, type } = JSON.parse(event.body);
 
         if (!email || !password || !type) {
           return {
@@ -40,54 +40,50 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
           };
         }
 
-        // Check for duplicate email
-        const existingCustomer = await prisma.customer.findUnique({
-          where: { email },
-        });
+        let user: Customer | Partner | null = null;
+        let loginResponse: LoginResponse;
 
-        const existingPartner = await prisma.partner.findUnique({
-          where: { email },
-        });
-
-        if (existingCustomer || existingPartner) {
+        if (type === 'CUSTOMER') {
+          user = await prisma.customer.findUnique({
+            where: { email },
+          });
+        } else if (type === 'PARTNER') {
+          user = await prisma.partner.findUnique({
+            where: { email },
+          });
+        } else {
           return {
             statusCode: 400,
-            body: JSON.stringify({ message: 'Email already exists' }),
+            body: JSON.stringify({ message: 'Invalid user type' }),
           };
         }
 
-        const hashedPassword = await bcrypt.hash(password, 10);
-        let user: Customer | Partner;
-        let signupResponse: SignupResponse;
+        if (!user) {
+          return {
+            statusCode: 401,
+            body: JSON.stringify({ message: 'Invalid email or password' }),
+          };
+        }
+
+        const isValidPassword = await bcrypt.compare(password, user.password);
+
+        if (!isValidPassword) {
+          return {
+            statusCode: 401,
+            body: JSON.stringify({ message: 'Invalid email or password' }),
+          };
+        }
 
         if (type === 'CUSTOMER') {
-          user = await prisma.customer.create({
-            data: {
-              email,
-              password: hashedPassword,
-              name,
-              phone,
-            },
-          });
-          signupResponse = {
+          loginResponse = {
             id: user.id,
             email: user.email,
             type: 'CUSTOMER',
             name: user.name,
             token: jwt.sign({ id: user.id, type: 'CUSTOMER' }, JWT_SECRET),
           };
-        } else if (type === 'PARTNER') {
-          user = await prisma.partner.create({
-            data: {
-              email,
-              password: hashedPassword,
-              companyName,
-              businessPhone,
-              address,
-              description,
-            },
-          });
-          signupResponse = {
+        } else {
+          loginResponse = {
             id: user.id,
             email: user.email,
             type: 'PARTNER',
@@ -96,16 +92,11 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
             address: user.address,
             token: jwt.sign({ id: user.id, type: 'PARTNER' }, JWT_SECRET),
           };
-        } else {
-          return {
-            statusCode: 400,
-            body: JSON.stringify({ message: 'Invalid user type' }),
-          };
         }
 
         return {
-          statusCode: 201,
-          body: JSON.stringify(signupResponse),
+          statusCode: 200,
+          body: JSON.stringify(loginResponse),
         };
       }
       default:

@@ -125,7 +125,7 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return {
         statusCode: 401,
-        body: JSON.stringify({ message: '認証が必要です' }),
+        body: JSON.stringify({ message: 'Authentication required' }),
       };
     }
     const token = authHeader.split(' ')[1];
@@ -135,7 +135,7 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
     } catch (error) {
       return {
         statusCode: 401,
-        body: JSON.stringify({ message: '無効なトークンです' }),
+        body: JSON.stringify({ message: 'Invalid token' }),
       };
     }
 
@@ -151,20 +151,20 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
         if (decoded.type !== 'CUSTOMER') {
           return {
             statusCode: 403,
-            body: JSON.stringify({ message: '予約は顧客のみ作成できます' }),
+            body: JSON.stringify({ message: 'Only customers can create bookings' }),
           };
         }
         if (!event.body) {
           return {
             statusCode: 400,
-            body: JSON.stringify({ message: 'リクエストボディが必要です' }),
+            body: JSON.stringify({ message: 'Request body is required' }),
           };
         }
         const { partnerId, date, servicePlan, notes, price } = JSON.parse(event.body);
         if (!partnerId || !date || !servicePlan || !price) {
           return {
             statusCode: 400,
-            body: JSON.stringify({ message: '必須項目が不足しています' }),
+            body: JSON.stringify({ message: 'Missing required fields' }),
           };
         }
         const booking = await createBooking(decoded.id, partnerId, {
@@ -185,7 +185,7 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
     console.error('Error:', error);
     return {
       statusCode: 500,
-      body: JSON.stringify({ message: 'サーバーエラーが発生しました' }),
+      body: JSON.stringify({ message: 'Internal server error' }),
     };
   }
 }; 

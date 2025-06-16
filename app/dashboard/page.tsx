@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { Header } from "@/components/header"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -8,61 +8,57 @@ import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Calendar, MapPin, Star, User, Mail, Phone } from "lucide-react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { Footer } from "@/components/footer"
+
+interface Customer {
+  id: string
+  name: string
+  email: string
+  phone: string
+  createdAt: string
+}
 
 interface Booking {
   id: string
   companyName: string
   servicePlan: string
   date: string
-  status: "completed" | "upcoming" | "cancelled"
+  status: "upcoming" | "completed" | "cancelled"
   address: string
   price: string
   rating?: number
 }
 
-interface Customer {
-  id: string
-  name: string | null
-  email: string
-  phone: string | null
-  createdAt: string
-}
-
 export default function DashboardPage() {
-  const [customer, setCustomer] = useState<Customer | null>(null)
-  const [bookings, setBookings] = useState<Booking[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const router = useRouter()
+  const [customer] = useState<Customer>({
+    id: '1',
+    name: 'John Smith',
+    email: 'john@example.com',
+    phone: '123-456-7890',
+    createdAt: new Date().toISOString()
+  })
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        // ユーザーデータの取得
-        const userResponse = await fetch('/api/user/me')
-        if (!userResponse.ok) {
-          throw new Error('Failed to fetch user data')
-        }
-        const userData = await userResponse.json()
-        setCustomer(userData)
-
-        // 予約データの取得
-        const bookingsResponse = await fetch('/api/bookings')
-        if (!bookingsResponse.ok) {
-          throw new Error('Failed to fetch bookings')
-        }
-        const bookingsData = await bookingsResponse.json()
-        setBookings(bookingsData)
-      } catch (error) {
-        console.error('Error fetching data:', error)
-        router.push('/auth/customer')
-      } finally {
-        setIsLoading(false)
-      }
+  const [bookings] = useState<Booking[]>([
+    {
+      id: '1',
+      companyName: 'Paint Service Co.',
+      servicePlan: 'Exterior Painting',
+      date: new Date().toISOString(),
+      status: 'upcoming',
+      address: '123 Main St, New York, NY',
+      price: '$1,500'
+    },
+    {
+      id: '2',
+      companyName: 'Renovation Pro',
+      servicePlan: 'Interior Painting',
+      date: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+      status: 'completed',
+      address: '456 Park Ave, New York, NY',
+      price: '$2,000',
+      rating: 5
     }
-
-    fetchData()
-  }, [router])
+  ])
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -75,21 +71,6 @@ export default function DashboardPage() {
       default:
         return "bg-gray-100 text-gray-800"
     }
-  }
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading...</p>
-        </div>
-      </div>
-    )
-  }
-
-  if (!customer) {
-    return null
   }
 
   return (
@@ -122,22 +103,20 @@ export default function DashboardPage() {
                   <div>
                     <h3 className="font-semibold text-gray-900">{customer.name || 'Customer'}</h3>
                     <p className="text-sm text-gray-600">
-                      Customer since {new Date(customer.createdAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                      Registered: {new Date(customer.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
                     </p>
                   </div>
                 </div>
 
-                <div className="space-y-3 pt-4 border-t">
+                <div className="space-y-2 text-sm">
                   <div className="flex items-center text-gray-600">
-                    <Mail className="h-4 w-4 mr-3 flex-shrink-0" />
-                    <span className="text-sm break-all">{customer.email}</span>
+                    <User className="h-4 w-4 mr-2" />
+                    <span>{customer.name}</span>
                   </div>
-                  {customer.phone && (
-                    <div className="flex items-center text-gray-600">
-                      <Phone className="h-4 w-4 mr-3 flex-shrink-0" />
-                      <span className="text-sm">{customer.phone}</span>
-                    </div>
-                  )}
+                  <div className="flex items-center text-gray-600">
+                    <Calendar className="h-4 w-4 mr-2" />
+                    <span>{customer.phone}</span>
+                  </div>
                 </div>
 
                 <Button variant="outline" className="w-full mt-4">
@@ -152,7 +131,7 @@ export default function DashboardPage() {
               </CardHeader>
               <CardContent className="space-y-3">
                 <Link href="/partners">
-                  <Button className="w-full bg-primary hover:bg-primary/90">Book New Service</Button>
+                  <Button className="w-full bg-primary hover:bg-primary/90">Book a New Service</Button>
                 </Link>
                 <Button variant="outline" className="w-full">
                   Contact Support
@@ -168,9 +147,9 @@ export default function DashboardPage() {
                 <CardTitle className="flex items-center justify-between">
                   <span className="flex items-center">
                     <Calendar className="h-5 w-5 mr-2 text-primary" />
-                    My Bookings
+                    Bookings
                   </span>
-                  <Badge variant="secondary">{bookings.length} Total</Badge>
+                  <Badge variant="secondary">{bookings.length} bookings</Badge>
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -184,7 +163,8 @@ export default function DashboardPage() {
                         </div>
                         <div className="text-right ml-4 flex-shrink-0">
                           <Badge className={getStatusColor(booking.status)}>
-                            {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
+                            {booking.status === 'completed' ? 'Completed' : 
+                             booking.status === 'upcoming' ? 'Upcoming' : 'Cancelled'}
                           </Badge>
                           <p className="text-lg font-semibold text-primary mt-1">{booking.price}</p>
                         </div>
@@ -195,69 +175,33 @@ export default function DashboardPage() {
                           <Calendar className="h-4 w-4 mr-2 mt-0.5 flex-shrink-0" />
                           <span>
                             {new Date(booking.date).toLocaleDateString("en-US", {
-                              weekday: "long",
                               year: "numeric",
                               month: "long",
                               day: "numeric",
+                              weekday: "long"
                             })}
                           </span>
                         </div>
                         <div className="flex items-start">
                           <MapPin className="h-4 w-4 mr-2 mt-0.5 flex-shrink-0" />
-                          <span className="break-words">{booking.address}</span>
+                          <span>{booking.address}</span>
                         </div>
-                      </div>
-
-                      {booking.status === "completed" && booking.rating && (
-                        <div className="flex items-center mt-3 pt-3 border-t">
-                          <span className="text-sm text-gray-600 mr-2">Your rating:</span>
+                        {booking.rating && (
                           <div className="flex items-center">
-                            {[...Array(5)].map((_, i) => (
-                              <Star
-                                key={i}
-                                className={`h-4 w-4 ${
-                                  i < booking.rating! ? "text-yellow-400 fill-current" : "text-gray-300"
-                                }`}
-                              />
-                            ))}
+                            <Star className="h-4 w-4 mr-2 text-yellow-400" />
+                            <span>{booking.rating} / 5</span>
                           </div>
-                        </div>
-                      )}
-
-                      <div className="flex flex-wrap gap-2 mt-4">
-                        <Button variant="outline" size="sm" className="flex-1 sm:flex-none">
-                          View Details
-                        </Button>
-                        {booking.status === "upcoming" && (
-                          <Button variant="outline" size="sm" className="flex-1 sm:flex-none">
-                            Reschedule
-                          </Button>
-                        )}
-                        {booking.status === "completed" && !booking.rating && (
-                          <Button size="sm" className="bg-primary hover:bg-primary/90 flex-1 sm:flex-none">
-                            Leave Review
-                          </Button>
                         )}
                       </div>
                     </div>
                   ))}
                 </div>
-
-                {bookings.length === 0 && (
-                  <div className="text-center py-8">
-                    <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">No bookings yet</h3>
-                    <p className="text-gray-600 mb-4">Start by booking your first painting service!</p>
-                    <Link href="/partners">
-                      <Button className="bg-primary hover:bg-primary/90">Browse Painters</Button>
-                    </Link>
-                  </div>
-                )}
               </CardContent>
             </Card>
           </div>
         </div>
       </main>
+      <Footer />
     </div>
   )
 }

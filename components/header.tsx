@@ -27,7 +27,7 @@ export function Header({ userType, isAuthenticated }: HeaderProps) {
       }).response;
 
       router.push('/')
-      window.location.reload()
+      // window.location.reload()
     } catch (error) {
       console.error('Sign out error:', error)
     }
@@ -66,18 +66,6 @@ export function Header({ userType, isAuthenticated }: HeaderProps) {
               className={`text-gray-600 hover:${isPartner ? "text-orange-500" : "text-primary"} transition-colors`}
             >
               Find Painters
-            </Link>
-            <Link
-              href="/about"
-              className={`text-gray-600 hover:${isPartner ? "text-orange-500" : "text-primary"} transition-colors`}
-            >
-              About
-            </Link>
-            <Link
-              href="/contact"
-              className={`text-gray-600 hover:${isPartner ? "text-orange-500" : "text-primary"} transition-colors`}
-            >
-              Contact
             </Link>
           </nav>
 
