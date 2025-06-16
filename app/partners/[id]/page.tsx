@@ -67,7 +67,7 @@ export default function PartnerDetailPage() {
     }
 
     if (params.id) {
-      fetchPartnerData()
+    fetchPartnerData()
     }
   }, [params.id])
 

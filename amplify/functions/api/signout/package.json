@@ -2,6 +2,7 @@
   "name": "signout",
   "version": "1.0.0",
   "description": "Sign out API",
+  "type": "module",
   "main": "handler.js",
   "dependencies": {
     "aws-lambda": "^1.0.7"

@@ -19,45 +19,49 @@ export interface VerifyResponse {
 
 export interface Partner {
   id: string;
-  email: string;
   name: string;
-  companyName: string;
-  businessPhone: string;
+  email: string;
   phone: string;
   address: string;
+  rating: number;
+  reviewCount: number;
   description: string;
   images: string[];
   specialties: string[];
   price: string;
-  rating: number;
-  reviewCount: number;
   servicePlans: {
     id: string;
     name: string;
     price: string;
     description: string;
   }[];
-  createdAt: string;
-  updatedAt: string;
 }
 
 export interface PartnersResponse {
   partners: Partner[];
-  total: number;
   totalPages: number;
-  currentPage: number;
 }
 
 export interface Booking {
   id: string;
-  customerName: string;
-  customerEmail: string;
-  customerPhone: string;
+  date: Date;
   servicePlan: string;
-  date: string;
-  time: string;
-  status: "pending" | "confirmed" | "completed" | "cancelled";
-  address: string;
-  price: string;
-  notes?: string;
+  status: string;
+  notes: string | null;
+  price: number;
+  rating: number | null;
+  customer: {
+    id: string;
+    name: string | null;
+    email: string;
+    phone?: string;
+    address?: string;
+  };
+  partner: {
+    id: string;
+    companyName: string;
+    email: string;
+  };
+  createdAt: Date;
+  updatedAt: Date;
 } 

@@ -2,6 +2,7 @@
   "name": "partner",
   "version": "1.0.0",
   "description": "Partner API",
+  "type": "module",
   "main": "handler.js",
   "dependencies": {
     "@prisma/client": "^5.10.0",

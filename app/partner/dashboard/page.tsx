@@ -42,8 +42,8 @@ export default function PartnerDashboardPage() {
 
   const filteredBookings = bookings.filter((booking) => {
     const matchesSearch =
-      booking.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      booking.address.toLowerCase().includes(searchTerm.toLowerCase())
+      booking.customer.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      booking.customer.email.toLowerCase().includes(searchTerm.toLowerCase())
     const matchesStatus = statusFilter === "all" || booking.status === statusFilter
     return matchesSearch && matchesStatus
   })
@@ -203,7 +203,7 @@ export default function PartnerDashboardPage() {
                     <div>
                       <h4 className="font-semibold text-gray-900 flex items-center">
                         <User className="h-4 w-4 mr-2" />
-                        {booking.customerName}
+                        {booking.customer.name}
                       </h4>
                       <p className="text-sm text-gray-600">{booking.servicePlan}</p>
                     </div>
@@ -219,12 +219,12 @@ export default function PartnerDashboardPage() {
                     <div className="flex items-center">
                       <Calendar className="h-4 w-4 mr-2" />
                       <span>
-                        {new Date(booking.date).toLocaleDateString()} at {booking.time}
+                        {new Date(booking.date).toLocaleDateString()}
                       </span>
                     </div>
                     <div className="flex items-center">
                       <MapPin className="h-4 w-4 mr-2" />
-                      <span>{booking.address}</span>
+                      <span>{booking.customer.address}</span>
                     </div>
                   </div>
 
@@ -233,11 +233,11 @@ export default function PartnerDashboardPage() {
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                         <div className="flex items-center text-gray-600">
                           <Mail className="h-4 w-4 mr-2" />
-                          <span>{booking.customerEmail}</span>
+                          <span>{booking.customer.email}</span>
                         </div>
                         <div className="flex items-center text-gray-600">
                           <Phone className="h-4 w-4 mr-2" />
-                          <span>{booking.customerPhone}</span>
+                          <span>{booking.customer.phone}</span>
                         </div>
                       </div>
 
