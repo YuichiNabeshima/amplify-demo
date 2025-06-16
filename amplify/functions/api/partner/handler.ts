@@ -15,7 +15,7 @@ type PartnerResponse = {
   companyName: string;
   businessPhone: string;
   address: string;
-  description: string;
+  description: string | null;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -67,7 +67,7 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
           companyName: partner.companyName,
           businessPhone: partner.businessPhone,
           address: partner.address,
-          description: partner.description,
+          description: partner.description as string | null,
           createdAt: partner.createdAt,
           updatedAt: partner.updatedAt,
         };
@@ -124,7 +124,7 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
             companyName: updatedPartner.companyName,
             businessPhone: updatedPartner.businessPhone,
             address: updatedPartner.address,
-            description: updatedPartner.description,
+            description: updatedPartner.description as string | null,
             createdAt: updatedPartner.createdAt,
             updatedAt: updatedPartner.updatedAt,
           };
@@ -150,7 +150,7 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
             companyName: updatedPartner.companyName,
             businessPhone: updatedPartner.businessPhone,
             address: updatedPartner.address,
-            description: updatedPartner.description,
+            description: updatedPartner.description as string | null,
             createdAt: updatedPartner.createdAt,
             updatedAt: updatedPartner.updatedAt,
           };

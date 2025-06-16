@@ -13,10 +13,10 @@ type LoginResponse = {
   id: string;
   email: string;
   type: string;
-  name?: string;
-  companyName?: string;
-  businessPhone?: string;
-  address?: string;
+  name?: string | null;
+  companyName?: string | null;
+  businessPhone?: string | null;
+  address?: string | null;
   token: string;
 };
 
@@ -44,13 +44,15 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
         let loginResponse: LoginResponse;
 
         if (type === 'CUSTOMER') {
-          user = await prisma.customer.findUnique({
+          const customer = await prisma.customer.findUnique({
             where: { email },
           });
+          user = customer;
         } else if (type === 'PARTNER') {
-          user = await prisma.partner.findUnique({
+          const partner = await prisma.partner.findUnique({
             where: { email },
           });
+          user = partner;
         } else {
           return {
             statusCode: 400,
@@ -75,22 +77,24 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
         }
 
         if (type === 'CUSTOMER') {
+          const customer = user as Customer;
           loginResponse = {
-            id: user.id,
-            email: user.email,
+            id: customer.id,
+            email: customer.email,
             type: 'CUSTOMER',
-            name: user.name,
-            token: jwt.sign({ id: user.id, type: 'CUSTOMER' }, JWT_SECRET),
+            name: customer.name,
+            token: jwt.sign({ id: customer.id, type: 'CUSTOMER' }, JWT_SECRET),
           };
         } else {
+          const partner = user as Partner;
           loginResponse = {
-            id: user.id,
-            email: user.email,
+            id: partner.id,
+            email: partner.email,
             type: 'PARTNER',
-            companyName: user.companyName,
-            businessPhone: user.businessPhone,
-            address: user.address,
-            token: jwt.sign({ id: user.id, type: 'PARTNER' }, JWT_SECRET),
+            companyName: partner.companyName,
+            businessPhone: partner.businessPhone,
+            address: partner.address,
+            token: jwt.sign({ id: partner.id, type: 'PARTNER' }, JWT_SECRET),
           };
         }
 

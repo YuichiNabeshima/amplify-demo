@@ -27,7 +27,6 @@ export function Header({ userType, isAuthenticated }: HeaderProps) {
       }).response;
 
       router.push('/')
-      // window.location.reload()
     } catch (error) {
       console.error('Sign out error:', error)
     }

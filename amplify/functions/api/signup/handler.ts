@@ -13,7 +13,7 @@ type SignupResponse = {
   id: string;
   email: string;
   type: string;
-  name?: string;
+  name?: string | null;
   companyName?: string;
   businessPhone?: string;
   address?: string;
@@ -73,7 +73,7 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
             id: user.id,
             email: user.email,
             type: 'CUSTOMER',
-            name: user.name,
+            name: user.name as string | null,
             token: jwt.sign({ id: user.id, type: 'CUSTOMER' }, JWT_SECRET),
           };
         } else if (type === 'PARTNER') {
