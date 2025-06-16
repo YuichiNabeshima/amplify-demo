@@ -15,6 +15,8 @@ import { Star, MapPin, Phone, Mail, Calendar, Clock } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
 import { useParams } from "next/navigation"
+import { get } from '@/src/lib/amplify'
+import { Partner } from '@/src/types/api'
 
 interface ServicePlan {
   id: string
@@ -39,7 +41,7 @@ interface PartnerData {
 
 export default function PartnerDetailPage() {
   const params = useParams()
-  const [partnerData, setPartnerData] = useState<PartnerData | null>(null)
+  const [partnerData, setPartnerData] = useState<Partner | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [selectedDate, setSelectedDate] = useState("")
@@ -50,9 +52,11 @@ export default function PartnerDetailPage() {
     const fetchPartnerData = async () => {
       try {
         setLoading(true)
-        const response = await fetch(`/api/partners/${params.id}`)
-        if (!response.ok) throw new Error("Failed to fetch partner data")
-        const data = await response.json()
+        const restOperation = await get({ 
+          apiName: 'myHttpApi',
+          path: `/partners/${params.id}` 
+        }).response;
+        const data = await restOperation.body.json() as unknown as Partner;
         setPartnerData(data)
       } catch (error) {
         console.error("Error fetching partner:", error)
@@ -62,7 +66,9 @@ export default function PartnerDetailPage() {
       }
     }
 
-    fetchPartnerData()
+    if (params.id) {
+      fetchPartnerData()
+    }
   }, [params.id])
 
   const handleBookingSubmit = (e: React.FormEvent) => {

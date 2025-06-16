@@ -6,6 +6,7 @@ import { MobileMenu } from "@/components/mobile-menu"
 import { PaintBucket } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/hooks/use-auth"
+import { post } from '@/src/lib/amplify'
 
 interface HeaderProps {
   userType?: "customer" | "partner" | null
@@ -20,13 +21,10 @@ export function Header({ userType, isAuthenticated }: HeaderProps) {
 
   const handleSignOut = async () => {
     try {
-      const response = await fetch('/api/auth/signout', {
-        method: 'POST',
-      })
-
-      if (!response.ok) {
-        throw new Error('Failed to sign out')
-      }
+      await post({ 
+        apiName: 'myHttpApi',
+        path: '/signout' 
+      }).response;
 
       router.push('/')
       window.location.reload()

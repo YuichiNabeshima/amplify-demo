@@ -9,6 +9,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Eye, EyeOff, Mail, Lock, User } from "lucide-react"
 import { useRouter } from "next/navigation"
+import { post } from '@/src/lib/amplify'
+import { AuthResponse } from '@/src/types/api'
 
 interface AuthenticatorProps {
   userType: "customer" | "partner"
@@ -104,28 +106,28 @@ export function CustomAuthenticator({ userType, onAuthSuccess }: AuthenticatorPr
       setIsLoading(true)
       setError("")
 
-      const response = await fetch(`/api/auth/${activeTab === "signin" ? "signin" : "signup"}`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email: formData.email,
-          password: formData.password,
-          userType,
-          ...(activeTab === "signup" && {
-            name: formData.name,
-            companyName: formData.companyName,
-            businessPhone: formData.businessPhone,
-            address: formData.address,
-          }),
-        }),
-      })
+      const response = await post({ 
+        apiName: 'myHttpApi',
+        path: activeTab === "signin" ? '/signin' : '/signup',
+        options: {
+          body: {
+            email: formData.email,
+            password: formData.password,
+            userType,
+            ...(activeTab === "signup" && {
+              name: formData.name,
+              companyName: formData.companyName,
+              businessPhone: formData.businessPhone,
+              address: formData.address,
+            }),
+          }
+        }
+      }).response;
 
-      const data = await response.json()
+      const data = await response.body.json() as unknown as AuthResponse;
 
-      if (!response.ok) {
-        throw new Error(data.error || "Authentication failed")
+      if (!data.token) {
+        throw new Error("Authentication failed")
       }
 
       // Store the token
@@ -150,13 +152,10 @@ export function CustomAuthenticator({ userType, onAuthSuccess }: AuthenticatorPr
       setIsLoading(true)
       setError("")
 
-      const response = await fetch("/api/auth/signout", {
-        method: "POST",
-      })
-
-      if (!response.ok) {
-        throw new Error("Failed to sign out")
-      }
+      await post({ 
+        apiName: 'myHttpApi',
+        path: '/signout'
+      }).response;
 
       // Clear the token
       document.cookie = "token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT"

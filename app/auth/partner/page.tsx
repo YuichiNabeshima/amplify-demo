@@ -4,6 +4,8 @@ import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Header } from "@/components/header"
 import { CustomAuthenticator } from "@/components/custom-authenticator"
+import { get } from '@/src/lib/amplify'
+import { VerifyResponse } from '@/src/types/api'
 
 export default function PartnerAuthPage() {
   const router = useRouter()
@@ -13,30 +15,23 @@ export default function PartnerAuthPage() {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        console.log("Checking authentication...")
-        const response = await fetch("/api/auth/verify")
-        console.log("Auth response status:", response.status)
+        const restOperation = await get({ 
+          apiName: 'myHttpApi',
+          path: '/verify' 
+        }).response;
+        const data = await restOperation.body.json() as unknown as VerifyResponse;
+        console.log("Auth response status:", restOperation.statusCode)
         
-        if (!response.ok) {
-          console.log("Auth check failed:", response.status)
-          setIsLoading(false)
-          return
-        }
-        
-        const data = await response.json()
-        console.log("Auth data:", data)
-        
-        if (data.isAuthenticated && data.userType === "partner") {
-          console.log("Redirecting to partner dashboard...")
-          router.push("/partner/dashboard")
-        } else {
-          console.log("Not authenticated as partner")
-          setIsLoading(false)
+        if (restOperation.statusCode === 200 && data) {
+          console.log("Auth data:", data)
+          
+          if (data.isAuthenticated && data.userType === 'PARTNER') {
+            console.log("Redirecting to partner dashboard...")
+            router.push("/partner/dashboard")
+          }
         }
       } catch (error) {
-        console.error("Auth check failed:", error)
-        setError("Failed to check authentication status")
-        setIsLoading(false)
+        console.error("Error checking auth:", error)
       }
     }
 

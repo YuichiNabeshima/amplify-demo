@@ -8,20 +8,8 @@ import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Calendar, MapPin, Clock, User, Phone, Mail, Search, Filter } from "lucide-react"
-
-interface Booking {
-  id: string
-  customerName: string
-  customerEmail: string
-  customerPhone: string
-  servicePlan: string
-  date: string
-  time: string
-  status: "pending" | "confirmed" | "completed" | "cancelled"
-  address: string
-  price: string
-  notes?: string
-}
+import { get } from '@/src/lib/amplify'
+import { Booking } from '@/src/types/api'
 
 export default function PartnerDashboardPage() {
   const [searchTerm, setSearchTerm] = useState("")
@@ -34,11 +22,12 @@ export default function PartnerDashboardPage() {
   useEffect(() => {
     const fetchBookings = async () => {
       try {
-        const response = await fetch("/api/partner/bookings")
-        if (!response.ok) {
-          throw new Error("Failed to fetch bookings")
-        }
-        const data = await response.json()
+        setIsLoading(true)
+        const restOperation = await get({ 
+          apiName: 'myHttpApi',
+          path: '/bookings' 
+        }).response
+        const data = await restOperation.body.json() as unknown as Booking[]
         setBookings(data)
       } catch (error) {
         console.error("Error fetching bookings:", error)

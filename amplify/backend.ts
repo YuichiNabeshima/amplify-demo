@@ -13,6 +13,13 @@ import { HttpLambdaIntegration } from "aws-cdk-lib/aws-apigatewayv2-integrations
 import { Policy, PolicyStatement } from "aws-cdk-lib/aws-iam";
 
 import { bookingApi } from "./functions/api/booking/resource";
+import { partnerApi } from "./functions/api/partner/resource";
+import { partnersApi } from "./functions/api/partners/resource";
+import { signupApi } from "./functions/api/signup/resource";
+import { signinApi } from "./functions/api/signin/resource";
+import { signoutApi } from "./functions/api/signout/resource";
+import { verifyApi } from "./functions/api/verify/resource";
+import { meApi } from "./functions/api/me/resource";
 
 import { auth } from "./auth/resource";
 import { data } from "./data/resource";
@@ -21,6 +28,13 @@ export const backend = defineBackend({
   auth,
   data,
   bookingApi,
+  partnerApi,
+  partnersApi,
+  signupApi,
+  signinApi,
+  signoutApi,
+  verifyApi,
+  meApi,
 });
 
 // create a new API stack
@@ -42,6 +56,41 @@ const userPoolAuthorizer = new HttpUserPoolAuthorizer(
 const bookingIntegration = new HttpLambdaIntegration(
   "BookingIntegration",
   backend.bookingApi.resources.lambda
+);
+
+const partnerIntegration = new HttpLambdaIntegration(
+  "PartnerIntegration",
+  backend.partnerApi.resources.lambda
+);
+
+const partnersIntegration = new HttpLambdaIntegration(
+  "PartnersIntegration",
+  backend.partnersApi.resources.lambda
+);
+
+const signupIntegration = new HttpLambdaIntegration(
+  "SignupIntegration",
+  backend.signupApi.resources.lambda
+);
+
+const signinIntegration = new HttpLambdaIntegration(
+  "SigninIntegration",
+  backend.signinApi.resources.lambda
+);
+
+const signoutIntegration = new HttpLambdaIntegration(
+  "SignoutIntegration",
+  backend.signoutApi.resources.lambda
+);
+
+const verifyIntegration = new HttpLambdaIntegration(
+  "VerifyIntegration",
+  backend.verifyApi.resources.lambda
+);
+
+const meIntegration = new HttpLambdaIntegration(
+  "MeIntegration",
+  backend.meApi.resources.lambda
 );
 
 // create a new HTTP API with IAM as default authorizer
@@ -67,6 +116,48 @@ httpApi.addRoutes({
   path: "/booking",
   methods: [HttpMethod.GET, HttpMethod.POST],
   integration: bookingIntegration,
+});
+
+httpApi.addRoutes({
+  path: "/partner",
+  methods: [HttpMethod.GET, HttpMethod.PUT],
+  integration: partnerIntegration,
+});
+
+httpApi.addRoutes({
+  path: "/partners",
+  methods: [HttpMethod.GET],
+  integration: partnersIntegration,
+});
+
+httpApi.addRoutes({
+  path: "/signup",
+  methods: [HttpMethod.POST],
+  integration: signupIntegration,
+});
+
+httpApi.addRoutes({
+  path: "/signin",
+  methods: [HttpMethod.POST],
+  integration: signinIntegration,
+});
+
+httpApi.addRoutes({
+  path: "/signout",
+  methods: [HttpMethod.POST],
+  integration: signoutIntegration,
+});
+
+httpApi.addRoutes({
+  path: "/verify",
+  methods: [HttpMethod.POST],
+  integration: verifyIntegration,
+});
+
+httpApi.addRoutes({
+  path: "/me",
+  methods: [HttpMethod.GET],
+  integration: meIntegration,
 });
 
 // create a new IAM policy to allow Invoke access to the API

@@ -11,24 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Star, MapPin, Search } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
-
-interface Partner {
-  id: string
-  name: string
-  location: string
-  rating: number
-  reviewCount: number
-  image: string
-  specialties: string[]
-  price: string
-}
-
-interface PartnersResponse {
-  partners: Partner[]
-  total: number
-  totalPages: number
-  currentPage: number
-}
+import { get } from '@/src/lib/amplify'
+import { Partner, PartnersResponse } from '@/src/types/api'
 
 const specialties = [
   "Interior",
@@ -51,6 +35,7 @@ export default function PartnersPage() {
   const [specialty, setSpecialty] = useState("all")
   const [currentPage, setCurrentPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
+  const [itemsPerPage] = useState(6)
 
   useEffect(() => {
     const fetchPartners = async () => {
@@ -58,15 +43,16 @@ export default function PartnersPage() {
         setLoading(true)
         const params = new URLSearchParams({
           page: currentPage.toString(),
-          limit: "6",
+          limit: itemsPerPage.toString(),
           ...(search && { search }),
           ...(specialty && specialty !== "all" && { specialty }),
         })
 
-        const response = await fetch(`/api/partners?${params}`)
-        if (!response.ok) throw new Error("Failed to fetch partners")
-
-        const data: PartnersResponse = await response.json()
+        const restOperation = await get({ 
+          apiName: 'myHttpApi',
+          path: `/partners?${params}` 
+        }).response;
+        const data = await restOperation.body.json() as unknown as PartnersResponse;
         setPartners(data.partners)
         setTotalPages(data.totalPages)
       } catch (error) {
@@ -78,7 +64,7 @@ export default function PartnersPage() {
     }
 
     fetchPartners()
-  }, [currentPage, search, specialty])
+  }, [currentPage, search, specialty, itemsPerPage])
 
   if (loading) {
     return (
@@ -146,14 +132,14 @@ export default function PartnersPage() {
           {partners.map((company) => (
             <Card key={company.id} className="overflow-hidden hover:shadow-lg transition-shadow pt-0">
               <div className="relative h-48">
-                <Image src={company.image} alt={company.name} fill className="object-cover" />
+                <Image src={company.images[0]} alt={company.name} fill className="object-cover" />
               </div>
               <CardContent className="p-6">
                 <h3 className="text-xl font-semibold text-gray-900 mb-2">{company.name}</h3>
 
                 <div className="flex items-center text-gray-600 mb-3">
                   <MapPin className="h-4 w-4 mr-1" />
-                  <span className="text-sm">{company.location}</span>
+                  <span className="text-sm">{company.address}</span>
                 </div>
 
                 <div className="flex items-center mb-4">
